@@ -117,7 +117,7 @@ public final class TamableFoxLogic {
             ITamableFoxAdapter fox,
             Object itemstack
     ) {
-        if (!isChicken(itemstack)) {
+        if (!fox.isChicken(itemstack)) {
             return null;
         }
 
@@ -229,10 +229,6 @@ public final class TamableFoxLogic {
 
     private static boolean isBucket(Object itemstack) {
         return itemstack != null && itemstack.toString().contains("Bucket");
-    }
-
-    private static boolean isChicken(Object itemstack) {
-        return itemstack != null && itemstack.toString().contains("CHICKEN");
     }
 
     private static void setItemCount(Object itemstack, int count) {

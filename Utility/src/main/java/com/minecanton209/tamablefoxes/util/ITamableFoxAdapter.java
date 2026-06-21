@@ -37,6 +37,29 @@ public interface ITamableFoxAdapter {
     boolean isSpawnEgg(Object itemstack);
     boolean isEdible(Object itemstack);
     boolean isMeat(Object itemstack);
+    default boolean isChicken(Object itemstack) {
+        if (itemstack == null) return false;
+        try {
+            java.lang.reflect.Method getItem = itemstack.getClass().getMethod("getItem");
+            Object item = getItem.invoke(itemstack);
+            if (item == null) return false;
+            String[] pkgs = {
+                "net.minecraft.world.item.Items",
+                "net.minecraft.server.v1_14_R1.Items",
+                "net.minecraft.server.v1_15_R1.Items",
+                "net.minecraft.server.v1_16_R1.Items",
+                "net.minecraft.server.v1_16_R2.Items",
+                "net.minecraft.server.v1_16_R3.Items"
+            };
+            for (String pkg : pkgs) {
+                try {
+                    Object chicken = Class.forName(pkg).getField("CHICKEN").get(null);
+                    if (item == chicken) return true;
+                } catch (ClassNotFoundException ignored) {}
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
     int getFoodNutrition(Object itemstack);
     Object copyItemStack(Object itemstack);
     void shrinkItem(Object itemstack, int amount);
