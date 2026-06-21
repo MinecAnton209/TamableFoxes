@@ -90,10 +90,6 @@
     </pluginRepositories>
 
     <repositories>
-        <repository>
-            <id>mvn-wesjd-net</id>
-            <url>https://mvn.wesjd.net/</url>
-        </repository>
         <!-- FOX: Spigot -> Paper -->
         <repository>
             <id>paper-repo</id>
@@ -260,7 +256,6 @@
         <dependency>
             <groupId>net.wesjd</groupId>
             <artifactId>anvilgui</artifactId>
-            <version>${anvilgui.version}</version>
         </dependency>
         <dependency>
             <groupId>com.minecanton209</groupId>

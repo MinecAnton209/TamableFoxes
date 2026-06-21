@@ -12,21 +12,6 @@
 
     <artifactId>tamablefoxes_v1_16_R2</artifactId>
 
-    <repositories>
-        <repository>
-            <id>mvn-wesjd-net</id>
-            <url>https://mvn.wesjd.net/</url>
-        </repository>
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-        <repository>
-            <id>codemc-snapshots</id>
-            <url>https://repo.codemc.io/repository/nms/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>com.minecanton209</groupId>
@@ -43,7 +28,6 @@
         <dependency>
             <groupId>net.wesjd</groupId>
             <artifactId>anvilgui</artifactId>
-            <version>${anvilgui.version}</version>
         </dependency>
     </dependencies>
 </project>
