@@ -1,100 +1,93 @@
-<h1 align="center">Tamable Foxes-Revived</h1>
-<p align="center">
-SpigotMC Plugin that gives you the ability to tame foxes!
-</p>
+# Tamable Foxes (Community Port)
 
+[![SpigotMC](https://img.shields.io/badge/SpigotMC-Coming_Soon-FF6600?logo=spigotmc&logoColor=white&style=flat-square)](https://www.spigotmc.org/resources/69537/)
+[![Modrinth](https://img.shields.io/badge/Modrinth-Coming_Soon-1BD96A?logo=modrinth&logoColor=white&style=flat-square)](https://modrinth.com/)
+[![GitHub](https://img.shields.io/badge/GitHub-bgfoxsland/TamableFoxes--Revived-181717?logo=github&logoColor=white&style=flat-square)](https://github.com/bgfoxsland/TamableFoxes-Revived)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
+[![Java 25+](https://img.shields.io/badge/Java-25%2B-ED8B00?logo=openjdk&logoColor=white&style=flat-square)](https://adoptium.net/)
 
+A Spigot/Paper plugin that adds tamable foxes to Minecraft.
 
-### WARNING: Do not reload the plugin, you may loose foxes!!
-**TamableFoxes-Revived** is a fork and continuation of the original **[TamableFoxes](https://github.com/SeanOMik/TamableFoxes)** plugin. This project was created because the original repository was archived and no longer maintained.
+> **Warning:** Do not reload the plugin at runtime — you may lose your tamed foxes. Use `/tamablefoxes reload` or restart the server instead.
 
-This project still follows the [MIT](https://github.com/bgfoxsland/TamableFoxes-Revived/blob/master/LICENSE) license of the original repository
+## Features
 
-The game versions currently supported by this plugin are as follows:
+- Tame wild foxes using raw chicken (33% chance)
+- Breed tamed foxes with sweet berries
+- Tamed foxes follow their owner and sleep when the owner sleeps
+- Shift + right-click to give items to your fox
+- Right-click to toggle sit
+- Shift + right-click with empty hand to toggle sleep
+- Foxes attack the owner's targets and things that attack the owner
+- Foxes holding a Totem of Undying will consume it and revive
+- Wild foxes pick berry bushes and pounce on chickens and rabbits
+- Natural spawning in the same biomes as vanilla foxes
+- Snow and red fox variants
+- Configurable messages via `language.yml`
+- Death notification when a tamed fox dies
+- bStats metrics (opt-out in `bStats/config.yml`)
 
-1.14、 1.14.1、 1.14.2、 1.14.3、 1.14.4、
+## Supported Versions
 
-1.15、 1.15.1、 1.15.2
+| Minecraft | Java |
+|-----------|------|
+| 1.14 – 1.16.5 | 8+ |
+| 1.17 – 1.17.1 | 16+ |
+| 1.18 – 1.21.11 | 17+ |
+| 26.1, 26.2 | 25+ |
 
-1.16、 1.16.2、 1.16.3、 1.16.4、 1.16.5
+## Commands
 
-1.17、 1.17.1
+| Command | Description |
+|---------|-------------|
+| `/spawntamablefox [red/snow]` | Spawn a tamable fox at your location |
+| `/givefox <player>` | Give a fox to another player |
+| `/tamablefoxes reload` | Reload the plugin config |
 
-1.18、 1.18.1、1.18.2
+## Permissions
 
-1.19、 1.19.1、 1.19.2、 1.19.3、 1.19.4
+| Permission | Default | Description |
+|------------|---------|-------------|
+| `tamablefoxes.tame` | everyone | Tame foxes |
+| `tamablefoxes.tame.unlimited` | op | Bypass tame limit |
+| `tamablefoxes.tame.anywhere` | op | Tame in banned worlds |
+| `tamablefoxes.spawn` | op | Use `/spawntamablefox` |
+| `tamablefoxes.givefox.give` | everyone | Use `/givefox` |
+| `tamablefoxes.givefox.give.others` | op | Give another player's fox |
+| `tamablefoxes.givefox.receive` | everyone | Receive foxes |
+| `tamablefoxes.reload` | op | Reload config |
 
-1.20、 1.20.1、 1.20.3、 1.20.4
+## Configuration
 
-1.21、 1.21.1、 1.21.4、 1.21.5、 1.21.6、 1.21.7、 1.21.8、 1.21.9、 1.21.10、 1.21.11
-
-### Default configuration files:
-* [config.yml](https://github.com/bgfoxsland/TamableFoxes-Revived/blob/master/Plugin/src/main/resources/config.yml)
-* [language.yml](https://github.com/bgfoxsland/TamableFoxes-Revived/blob/master/Plugin/src/main/resources/language.yml)
-<br>
-
-If you get any errors, <a href="https://github.com/bgfoxsland/TamableFoxes-Revived/issues/new">create an issue!</a><br><br>
-
-Have you ever wanted to tame foxes? Well, now you can! <b>Use chicken to tame</b> and sweet berries to breed them!<br><br>
-
-## Features:
-* 33% Chance of taming
-* Breeding
-* Wild foxes pick berry bushes
-* Leaping on targets
-* Tamed foxes sleep when their owner does
-* Foxes follow owner
-* You can shift + right-click to let the fox hold items
-* Right-click to make the fox sit
-* Shift Right-click with an empty hand to make the fox sleep
-* If the fox is holding a totem of undying, the fox will consume it and be reborn.
-* Foxes attack the owner's target
-* Foxes attack the thing that attacked the owner.
-* Foxes are automatically spawned inside the world. (Same areas as vanilla foxes)
-* Foxes attack chickens and rabbits.
-* Snow and red foxes.
-* Language.yml
-* Message when a tamed fox dies
-* /givefox command to give foxes to other players.
-* Disabling certain gameplay messages
-  * You can do this by changing certain fields in `language.yml` to "disabled". The fields that can be disabled are:
-    * `taming-tamed-message`
-    * `taming-asking-for-name-message`
-    * `taming-chosen-name-perfect`
-    * `fox-doesnt-trust`
-
-## Commands:
-* /spawntamablefox [red/snow]: Spawns a tamable fox at the players' location.
-* /tamablefoxes reload: Reloads
-* /givefox [player name]: Give a fox to another player.
-
-## Permissions:
-* `tamablefoxes.reload`: Reloads the plugin config. Default: `op`
-* `tamablefoxes.spawn`: Gives permission to run the command /spawntamablefox. Default: `op`
-* `tamablefoxes.tame`: Gives the player the ability to tame a fox. Default: `Everybody`
-* `tamablefoxes.tame.unlimited`: Lets players bypass the tame limit. Default: `op`
-* `tamablefoxes.tame.anywhere`: Lets players bypass the banned worlds in config.yml (so they can tame in any world). Default: `op`
-* `tamablefoxes.givefox.give.others`: Allows the player to give another players fox to a player with /givefox. This will ignore if the other receiving has the `tamablefoxes.givefox.receive` permission. Default: `op`
-* `tamablefoxes.givefox.give`: Gives the player the ability to give foxes to other players with /givefox. Default: `Everybody`
-* `tamablefoxes.givefox.receive`: Gives the player the ability to receive foxes from other players from /givefox. Default: `Everybody`
-
-<br>
-
-![foxes sleeping](Screenshots/foxes-sleeping-with-player.png)
-![foxes sitting player holding sword](Screenshots/foxes-sitting-sword.png)
-![foxes with baby looking at player](Screenshots/foxes-baby-looking-at-player.png)
-![giving fox totem](Screenshots/giving-fox-item.gif)
-![fox leaping towards chicken](Screenshots/fox-pouncing.gif)
+- [`config.yml`](Plugin/src/main/resources/config.yml) — main settings
+- [`language.yml`](Plugin/src/main/resources/language.yml) — message customization (set any message to `disabled` to hide it)
 
 ## Building
-Use JDK 21 and run `mvn package` to build the project.
 
-After building, you can find the plugin in `./run/plugins/`
+**Requirements:** JDK 21 (JDK 25 for the 26.x module)
 
-*<small>Although the old information below mentions using compileSpigotVersions.sh to prepare the maven cache, I found in practice that with good network conditions, using JDK 21 and running `mvn package` is sufficient.</small>*
+```bash
+mvn clean package -DskipTests
+```
 
-*<small>Old information:To build you must have every version of spigot starting from 1.14 built and inside your maven cache. To do that, look at [compileSpigotVersions.sh](compileSpigotVersions.sh) that lists all the java commands and the java versions for them.</small>*
+The output plugin JAR will be in `Plugin/target/`.
 
-## Metrics collection
-![metrics](https://bstats.org/signatures/bukkit/TamableFoxes.svg)
-Tamable Foxes collects anonymous server statistics through bStats, an open-source statistics service for Minecraft software. If you wish to opt-out, you can do so in the `bstats/config.yml` file.
+> **Note:** Older NMS modules require their corresponding Spigot versions in your local Maven cache. Run `compileSpigotVersions.sh` (with the appropriate JDKs installed) to populate the cache, or build with `mvn package` alone — it will work if network conditions are good.
+
+## Screenshots
+
+![Foxes sleeping with player](Screenshots/foxes-sleeping-with-player.png)
+![Foxes sitting with player holding sword](Screenshots/foxes-sitting-sword.png)
+![Foxes with baby looking at player](Screenshots/foxes-baby-looking-at-player.png)
+![Giving fox item](Screenshots/giving-fox-item.gif)
+![Fox pouncing](Screenshots/fox-pouncing.gif)
+
+## License & Credits
+
+This project is a community-maintained port of the original Tamable Foxes plugin created by [SeanOMik](https://github.com/SeanOMik).
+
+**Original work:** Licensed under the [MIT License](https://github.com/SeanOMik/TamableFoxes/blob/master/LICENSE).
+
+**Current port:** Licensed under the [GNU General Public License v3.0 (GPLv3)](LICENSE).
+
+The original source code and MIT license terms can be found at <https://github.com/SeanOMik/TamableFoxes>.

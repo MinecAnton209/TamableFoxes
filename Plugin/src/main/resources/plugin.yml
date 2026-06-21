@@ -1,6 +1,6 @@
-name: Tamablefoxes
+name: Tamable Foxes (Community Port)
 version: ${project.version}
-main: net.seanomik.tamablefoxes.TamableFoxes
+main: com.minecanton209.tamablefoxes.TamableFoxes
 api-version: 1.14
 load: STARTUP
 description: Adds tamable foxes to Minecraft!

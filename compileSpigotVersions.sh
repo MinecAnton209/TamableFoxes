@@ -21,3 +21,7 @@ java -jar ./BuildTools.jar --rev 1.19.4 --remapped --compile-if-changed
 java -jar ./BuildTools.jar --rev 1.20 --remapped --compile-if-changed
 java -jar ./BuildTools.jar --rev 1.21 --remapped --compile-if-changed
 java -jar ./BuildTools.jar --rev 1.20.4 --remapped --compile-if-changed
+
+# Java 25
+java -jar ./BuildTools.jar --rev 26.1 --remapped --compile-if-changed
+java -jar ./BuildTools.jar --rev 26.2 --remapped --compile-if-changed

@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>net.seanomik</groupId>
+        <groupId>com.minecanton209</groupId>
         <artifactId>tamablefoxes-parent</artifactId>
-        <version>2.3.5</version>
+        <version>1.0.0</version>
     </parent>
 
     <build>
@@ -80,7 +80,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>net.seanomik</groupId>
+            <groupId>com.minecanton209</groupId>
             <artifactId>tamablefoxes-util</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>

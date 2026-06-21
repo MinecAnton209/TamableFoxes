@@ -6,8 +6,8 @@
 
     <parent>
         <artifactId>tamablefoxes-parent</artifactId>
-        <groupId>net.seanomik</groupId>
-        <version>2.3.5</version>
+        <groupId>com.minecanton209</groupId>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>tamablefoxes_v1_15_R1</artifactId>
@@ -29,7 +29,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>net.seanomik</groupId>
+            <groupId>com.minecanton209</groupId>
             <artifactId>tamablefoxes-util</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
