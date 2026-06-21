@@ -51,6 +51,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <anvilgui.version>1.10.13-SNAPSHOT</anvilgui.version>
     </properties>
 
     <build>

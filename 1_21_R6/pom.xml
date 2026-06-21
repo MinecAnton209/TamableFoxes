@@ -52,8 +52,8 @@
 
   <repositories>
     <repository>
-      <id>codemc-snapshots-anvilgui</id>
-      <url>https://repo.codemc.io/repository/maven-snapshots/</url>
+      <id>mvn-wesjd-net</id>
+      <url>https://mvn.wesjd.net/</url>
     </repository>
     <repository>
       <id>spigot-repo</id>
@@ -62,10 +62,6 @@
     <repository>
       <id>codemc-snapshots</id>
       <url>https://repo.codemc.io/repository/nms/</url>
-    </repository>
-    <repository>
-      <id>mvn-wesjd-net</id>
-      <url>https://mvn.wesjd.net/</url>
     </repository>
   </repositories>
 
@@ -86,7 +82,7 @@
     <dependency>
       <groupId>net.wesjd</groupId>
       <artifactId>anvilgui</artifactId>
-      <version>1.10.11-SNAPSHOT</version> <!-- FOX -->
+      <version>${anvilgui.version}</version>
     </dependency>
   </dependencies>
 </project>
