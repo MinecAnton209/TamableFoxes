@@ -415,6 +415,12 @@ public class EntityTamableFox extends Fox {
 
                         return InteractionResult.SUCCESS;
                     }
+
+                    // If vanilla Fox handled the interaction (e.g., gave item to player), return that result
+                    // to prevent calling super.mobInteract() a second time at the end of this method.
+                    if (flag == InteractionResult.SUCCESS) {
+                        return flag;
+                    }
                 }
             } else if (item == Items.CHICKEN) {
                 // Check if the player has permissions to tame the fox
