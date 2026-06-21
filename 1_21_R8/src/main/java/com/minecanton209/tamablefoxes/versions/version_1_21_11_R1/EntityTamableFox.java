@@ -10,9 +10,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,27 +39,21 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.NameTagItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
+import com.minecanton209.tamablefoxes.util.ITamableFoxAdapter;
+import com.minecanton209.tamablefoxes.util.TamableFoxLogic;
+import com.minecanton209.tamablefoxes.util.TamableFoxUtil;
 import com.minecanton209.tamablefoxes.util.Utils;
 import com.minecanton209.tamablefoxes.util.io.Config;
-import com.minecanton209.tamablefoxes.util.io.LanguageConfig;
-import com.minecanton209.tamablefoxes.util.io.sqlite.SQLiteHelper;
-import net.wesjd.anvilgui.AnvilGUI;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
-import org.bukkit.craftbukkit.v1_21_R7.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import com.minecanton209.tamablefoxes.versions.version_1_21_11_R1.pathfinding.FoxPathfinderGoalFollowOwner;
@@ -73,7 +65,7 @@ import com.minecanton209.tamablefoxes.versions.version_1_21_11_R1.pathfinding.Fo
 import com.minecanton209.tamablefoxes.versions.version_1_21_11_R1.pathfinding.FoxPathfinderGoalSleepWhenOrdered;
 import com.minecanton209.tamablefoxes.versions.version_1_21_11_R1.pathfinding.FoxPathfinderGoalSleepWithOwner;
 
-public class EntityTamableFox extends Fox {
+public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
 
     //private static final EntityDataAccessor<Byte> bw; // DATA_FLAGS_ID
     private static final Predicate<Entity> AVOID_PLAYERS; // AVOID_PLAYERS
@@ -88,6 +80,7 @@ public class EntityTamableFox extends Fox {
     private FoxPathfinderGoalSleepWhenOrdered goalSleepWhenOrdered;
 
     private boolean tamed;
+    private org.bukkit.entity.Player interactingPlayer;
 
     public EntityTamableFox(EntityType<? extends Fox> entitytype, Level world) {
         super(entitytype, world);
@@ -96,7 +89,7 @@ public class EntityTamableFox extends Fox {
         if (isTamed()) {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(24.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3.0D);
-            this.setHealth(this.getMaxHealth());
+            this.setHealth((float) this.getMaxHealth());
         } else {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0D);
@@ -248,18 +241,9 @@ public class EntityTamableFox extends Fox {
     @Override
     public void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
-        UUID ownerUuid = null;
-        // 尝试读取UUID字符串，如果不存在则会返回默认值
         String uuidString = input.getStringOr("OwnerUUID", "00000000-0000-0000-0000-000000000000");
-        try {
-            ownerUuid = UUID.fromString(uuidString);
-        } catch (IllegalArgumentException e) {
-            // 如果解析失败，则使用null
-            ownerUuid = null;
-        }
-
-
-        if (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0))) {
+        UUID ownerUuid = TamableFoxUtil.parseOwnerUUID(uuidString);
+        if (ownerUuid != null) {
             this.setOwnerUUID(ownerUuid);
             this.setTamed(true);
         } else {
@@ -281,8 +265,7 @@ public class EntityTamableFox extends Fox {
     }
 
     public boolean isTamed() {
-        UUID ownerUuid = getOwnerUUID();
-        return this.tamed && (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0)));
+        return TamableFoxUtil.isTamed(this.tamed, getOwnerUUID());
     }
 
     public void setTamed(boolean tamed) {
@@ -296,7 +279,7 @@ public class EntityTamableFox extends Fox {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0D);
         }
-        this.setHealth(this.getMaxHealth());
+        this.setHealth((float) this.getMaxHealth());
     }
 
     // Remove untamed goals if its tamed.
@@ -309,179 +292,22 @@ public class EntityTamableFox extends Fox {
     }
 
     public void rename(org.bukkit.entity.Player player) {
-        // FOX: catch errors
-        try {
-            new AnvilGUI.Builder()
-                    .onClick((slot, stateSnapshot) -> {
-                        String text = stateSnapshot.getText();
-                        if (slot == AnvilGUI.Slot.OUTPUT && !text.isEmpty()) {
-                            org.bukkit.entity.Entity tamableFox = this.getBukkitEntity();
-
-                            // This will auto format the name for config settings.
-                            String foxName = LanguageConfig.getFoxNameFormat(text, player.getDisplayName());
-
-                            tamableFox.setCustomName(foxName);
-                            tamableFox.setCustomNameVisible(true);
-                            if (!LanguageConfig.getTamingChosenPerfect(text).equalsIgnoreCase("disabled")) {
-                                stateSnapshot.getPlayer().sendMessage(Config.getPrefix() + ChatColor.GREEN + LanguageConfig.getTamingChosenPerfect(text));
-                            }
-                        } else if (!LanguageConfig.getTamingChosenPerfect(text).equalsIgnoreCase("disabled")) {
-                            stateSnapshot.getPlayer().sendMessage(Config.getPrefix() + ChatColor.GRAY + "The fox was not named");
-                        }
-
-                        return Arrays.asList(AnvilGUI.ResponseAction.close());
-                    })
-                    .text("Fox name")
-                    .title("Name your new friend!")
-                    .plugin(Utils.tamableFoxesPlugin)
-                    .open(player);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
+        TamableFoxLogic.openRenameGui(this);
     }
 
     @Override
     public InteractionResult mobInteract(Player entityhuman, InteractionHand enumhand) {
-        ItemStack itemstack = entityhuman.getItemInHand(enumhand);
-        Item item = itemstack.getItem();
-
-        if (item instanceof SpawnEggItem) {
+        this.setInteractingPlayer((org.bukkit.entity.Player) entityhuman.getBukkitEntity());
+        Object result = TamableFoxLogic.handleMobInteract(this, this.getItemBySlot(EquipmentSlot.MAINHAND), enumhand);
+        if (result == null) {
             return super.mobInteract(entityhuman, enumhand);
         }
-
-        if (this.isTamed()) {
-            // Heal the fox if its health is below the max.
-            if (item.builtInRegistryHolder().is(ItemTags.MEAT) && this.getHealth() < this.getMaxHealth()) {
-                FoodProperties foodProperties = itemstack.getComponents().get(DataComponents.FOOD);
-                if (foodProperties != null) {
-                    // Only remove the item from the player if they're in survival mode.
-                    org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
-                    if (player.getGameMode() != GameMode.CREATIVE ) {
-                        itemstack.shrink(1);
-                    }
-
-                    this.heal(foodProperties.nutrition(), EntityRegainHealthEvent.RegainReason.EATING);
-                    return InteractionResult.CONSUME;
-                }
-            }
-
-            if (isOwnedBy(entityhuman) && enumhand == InteractionHand.MAIN_HAND) {
-                // This super method checks if the fox can breed or not.
-                InteractionResult flag = super.mobInteract(entityhuman, enumhand);
-
-                // If the player is not sneaking and the fox cannot breed, then make the fox sit.
-                // @TODO: Do I need to use this.eQ() instead of flag != EnumInteractionResult.SUCCESS?
-                if (!entityhuman.isCrouching() && (flag != InteractionResult.SUCCESS || this.isBaby())) {
-                    // Show the rename menu again when trying to use a nametag on the fox.
-                    if (itemstack.getItem() instanceof NameTagItem) {
-                        org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
-                        rename(player);
-                        return InteractionResult.PASS;
-                    }
-
-                    this.goalSleepWhenOrdered.setOrderedToSleep(false);
-                    this.goalSitWhenOrdered.setOrderedToSit(!this.isOrderedToSit());
-                    this.setDeltaMovement(Vec3.ZERO); // FOX - set velocity to zero
-                    return InteractionResult.SUCCESS;
-                } else if (entityhuman.isCrouching()) { // Swap/Put/Take item from fox.
-                    // Ignore buckets since they can be easily duplicated.
-                    if (itemstack.getItem() instanceof BucketItem) {
-                        return InteractionResult.PASS;
-                    }
-
-                    // If the fox has something in its mouth and the player has something in its hand, empty it.
-                    if (this.hasItemInSlot(EquipmentSlot.MAINHAND)) {
-                        getBukkitEntity().getWorld().dropItem(getBukkitEntity().getLocation(), CraftItemStack.asBukkitCopy(this.getItemBySlot(EquipmentSlot.MAINHAND)));
-                        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR), false);
-                    } // Check if the player's hand is empty and if it is, make the fox sleep.
-                      // The reason its here is to make sure that we don't take the item
-                      // from its mouth and make it sleep in a single click.
-                    else if (!entityhuman.hasItemInSlot(EquipmentSlot.MAINHAND)) {
-                        this.goalSitWhenOrdered.setOrderedToSit(false);
-                        this.goalSleepWhenOrdered.setOrderedToSleep(!this.goalSleepWhenOrdered.isOrderedToSleep());
-                        this.setDeltaMovement(Vec3.ZERO); // FOX - set velocity to zero
-                    }
-
-                    // Run this task async to make sure to not slow the server down.
-                    // This is needed due to the item being removed as soon as its put in the foxes mouth.
-                    Bukkit.getScheduler().runTaskLaterAsynchronously(Utils.tamableFoxesPlugin, ()-> {
-                        // Put item in mouth
-                        if (entityhuman.hasItemInSlot(EquipmentSlot.MAINHAND)) {
-                            ItemStack c = itemstack.copy();
-                            c.setCount(1);
-
-                            // Only remove the item from the player if they're in survival mode.
-                            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
-                            if (player.getGameMode() != GameMode.CREATIVE) {
-                                itemstack.shrink(1);
-                            }
-
-                            this.setItemSlot(EquipmentSlot.MAINHAND, c, false);
-                        }
-                    }, 1L);
-
-                    return InteractionResult.SUCCESS;
-                }
-
-                // If vanilla Fox handled the interaction (e.g., gave item to player), return that result
-                // to prevent calling super.mobInteract() a second time at the end of this method.
-                if (flag == InteractionResult.SUCCESS) {
-                    return flag;
-                }
-            }
-        } else if (item == Items.CHICKEN) {
-            // Check if the player has permissions to tame the fox
-            if (Config.canPlayerTameFox((org.bukkit.entity.Player) entityhuman.getBukkitEntity())) {
-                // Only remove the item from the player if they're in survival mode.
-                org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
-                if (player.getGameMode() != GameMode.CREATIVE ) {
-                    itemstack.shrink(1);
-                }
-
-                SQLiteHelper sqLiteHelper = SQLiteHelper.getInstance(Utils.tamableFoxesPlugin);
-                int maxTameCount = Config.getMaxPlayerFoxTames();
-                if (!((org.bukkit.entity.Player) entityhuman.getBukkitEntity()).hasPermission("tamablefoxes.tame.unlimited") && maxTameCount > 0 && sqLiteHelper.getPlayerFoxAmount(entityhuman.getUUID()) >= maxTameCount) {
-                    if (!LanguageConfig.getFoxDoesntTrust().equalsIgnoreCase("disabled")) {
-                        ((org.bukkit.entity.Player) entityhuman.getBukkitEntity()).sendMessage(Config.getPrefix() + ChatColor.RED + LanguageConfig.getFoxDoesntTrust());
-                    }
-
-                    return InteractionResult.SUCCESS;
-                }
-
-                // 0.33% chance to tame the fox, also check if the called tame entity event is cancelled or not.
-                if (this.getRandom().nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
-                    this.tame(entityhuman);
-
-                    this.navigation.stop();
-                    this.goalSitWhenOrdered.setOrderedToSit(true);
-
-                    if (maxTameCount > 0) {
-                        sqLiteHelper.addPlayerFoxAmount(entityhuman.getUUID(), 1);
-                    }
-
-                    getBukkitEntity().getWorld().spawnParticle(org.bukkit.Particle.HEART, getBukkitEntity().getLocation(), 6, 0.5D, 0.5D, 0.5D);
-
-                    // Give player tamed message.
-                    if (!LanguageConfig.getTamedMessage().equalsIgnoreCase("disabled")) {
-                        ((org.bukkit.entity.Player) entityhuman.getBukkitEntity()).sendMessage(Config.getPrefix() + ChatColor.GREEN + LanguageConfig.getTamedMessage());
-                    }
-
-                    // Let the player choose the new fox's name if its enabled in config.
-                    if (Config.askForNameAfterTaming()) {
-                        if (!LanguageConfig.getTamingAskingName().equalsIgnoreCase("disabled")) {
-                            player.sendMessage(Config.getPrefix() + ChatColor.RED + LanguageConfig.getTamingAskingName());
-                        }
-                        rename(player);
-                    }
-                } else {
-                    getBukkitEntity().getWorld().spawnParticle(org.bukkit.Particle.SMOKE, getBukkitEntity().getLocation(), 10, 0.2D, 0.2D, 0.2D, 0.15D);
-                }
-            }
-
-            return InteractionResult.SUCCESS;
-        }
-
-        return super.mobInteract(entityhuman, enumhand);
+        return switch (result.toString()) {
+            case "CONSUME" -> InteractionResult.CONSUME;
+            case "SUCCESS" -> InteractionResult.SUCCESS;
+            case "PASS" -> InteractionResult.PASS;
+            default -> super.mobInteract(entityhuman, enumhand);
+        };
     }
 
     @Override
@@ -517,8 +343,8 @@ public class EntityTamableFox extends Fox {
         }
     }
 
-    @Nullable
-    public LivingEntity getOwner() {
+    @Override
+    public Object getOwner() {
         try {
             UUID ownerUuid = this.getOwnerUUID();
             return ownerUuid == null ? null : this.level().getPlayerByUUID(ownerUuid);
@@ -531,11 +357,27 @@ public class EntityTamableFox extends Fox {
     // Only attack entity if its not attacking owner.
     @Override
     public boolean canAttack(LivingEntity entity) {
-        return !this.isOwnedBy(entity) && super.canAttack(entity);
+        return !this.isOwnedByNms(entity) && super.canAttack(entity);
     }
 
-    public boolean isOwnedBy(LivingEntity entity) {
-        return entity == this.getOwner();
+    private boolean isOwnedByNms(LivingEntity entity) {
+        return entity == this.getOwnerNms();
+    }
+
+    @Override
+    public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
+        if (entity == null) return false;
+        Object owner = this.getOwner();
+        return owner != null && ((net.minecraft.world.entity.LivingEntity) owner).getBukkitEntity() == entity;
+    }
+
+    private net.minecraft.world.entity.LivingEntity getOwnerNms() {
+        try {
+            UUID ownerUuid = this.getOwnerUUID();
+            return ownerUuid == null ? null : this.level().getPlayerByUUID(ownerUuid);
+        } catch (IllegalArgumentException var2) {
+            return null;
+        }
     }
 
     /*
@@ -543,11 +385,11 @@ public class EntityTamableFox extends Fox {
      This code being from EntityWolf also means that wolves will want to attack foxes
      Our life would be so much easier if we could extend both EntityFox and EntityTameableAnimal
     */
-    public boolean wantsToAttack(LivingEntity entityliving, LivingEntity entityliving1) {
+    public boolean wantsToAttack(net.minecraft.world.entity.LivingEntity entityliving, net.minecraft.world.entity.LivingEntity entityliving1) {
         if (!(entityliving instanceof Creeper) && !(entityliving instanceof Ghast)) {
             if (entityliving instanceof EntityTamableFox) {
                 EntityTamableFox entityFox = (EntityTamableFox) entityliving;
-                return !entityFox.isTamed() || entityFox.getOwner() != entityliving1;
+                return !entityFox.isTamed() || entityFox.getOwnerNms() != entityliving1;
             } else {
                 return (!(entityliving instanceof Player)
                         || !(entityliving1 instanceof Player) ||
@@ -560,11 +402,19 @@ public class EntityTamableFox extends Fox {
         }
     }
 
+    @Override
+    public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
+        if (target == null || owner == null) return false;
+        net.minecraft.world.entity.LivingEntity nmsTarget = (net.minecraft.world.entity.LivingEntity) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity) target).getHandle();
+        net.minecraft.world.entity.LivingEntity nmsOwner = (net.minecraft.world.entity.LivingEntity) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity) owner).getHandle();
+        return this.wantsToAttack(nmsTarget, nmsOwner);
+    }
+
     // Set the scoreboard team to the same as the owner if its tamed.
     @Override
     public PlayerTeam getTeam() {
         if (this.isTamed()) {
-            LivingEntity var0 = this.getOwner();
+            LivingEntity var0 = this.getOwnerNms();
             if (var0 != null) {
                 return var0.getTeam();
             }
@@ -588,7 +438,7 @@ public class EntityTamableFox extends Fox {
     // When the fox dies, show a chat message, and remove the player's stored tamed foxed.
     @Override
     public void die(DamageSource damageSource) {
-        LivingEntity owner = this.getOwner();
+        LivingEntity owner = this.getOwnerNms();
 
         if (!this.level().isClientSide() && Boolean.TRUE.equals(
             this.level().getWorld().getGameRuleValue(
@@ -600,9 +450,8 @@ public class EntityTamableFox extends Fox {
         }
 
         // Remove the amount of foxes the player has tamed if the limit is enabled.
-        if (Config.getMaxPlayerFoxTames() > 0 && owner != null) {
-            SQLiteHelper sqliteHelper = SQLiteHelper.getInstance(Utils.tamableFoxesPlugin);
-            sqliteHelper.removePlayerFoxAmount(owner.getUUID(), 1);
+        if (owner != null) {
+            TamableFoxUtil.decrementTameCount(owner.getUUID());
         }
 
         super.die(damageSource);
@@ -617,11 +466,149 @@ public class EntityTamableFox extends Fox {
         return (Goal) Utils.instantiatePrivateInnerClass(Fox.class, innerName, this, Arrays.asList(), Arrays.asList());
     }
 
-    public boolean isOrderedToSit() { return this.goalSitWhenOrdered.isOrderedToSit(); }
+    // === ITamableFoxAdapter implementation ===
 
-    public void setOrderedToSit(boolean flag) { this.goalSitWhenOrdered.setOrderedToSit(flag); }
+    @Override
+    public void setInteractingPlayer(org.bukkit.entity.Player player) {
+        this.interactingPlayer = player;
+    }
 
-    public boolean isOrderedToSleep() { return this.goalSleepWhenOrdered.isOrderedToSleep(); }
+    @Override
+    public org.bukkit.entity.Player getBukkitPlayer() {
+        return interactingPlayer;
+    }
 
-    public void setOrderedToSleep(boolean flag) { this.goalSleepWhenOrdered.setOrderedToSleep(flag); }
+    @Override
+    public boolean isSpawnEgg(Object itemstack) {
+        return itemstack instanceof SpawnEggItem;
+    }
+
+    @Override
+    public boolean isEdible(Object itemstack) {
+        return itemstack instanceof ItemStack stack && stack.has(DataComponents.FOOD);
+    }
+
+    @Override
+    public boolean isMeat(Object itemstack) {
+        return itemstack instanceof ItemStack stack && stack.is(ItemTags.MEAT);
+    }
+
+    @Override
+    public int getFoodNutrition(Object itemstack) {
+        if (itemstack instanceof ItemStack stack) {
+            FoodProperties fp = stack.getComponents().get(DataComponents.FOOD);
+            return fp != null ? fp.nutrition() : 0;
+        }
+        return 0;
+    }
+
+    @Override
+    public Object copyItemStack(Object itemstack) {
+        return itemstack instanceof ItemStack stack ? stack.copy() : itemstack;
+    }
+
+    @Override
+    public void shrinkItem(Object itemstack, int amount) {
+        if (itemstack instanceof ItemStack stack) stack.shrink(amount);
+    }
+
+    @Override
+    public boolean hasItemInMainHand() {
+        return this.hasItemInSlot(EquipmentSlot.MAINHAND);
+    }
+
+    @Override
+    public Object getItemInMainHand() {
+        return this.getItemBySlot(EquipmentSlot.MAINHAND);
+    }
+
+    @Override
+    public void setItemSlotMainHand(Object item) {
+        if (item instanceof ItemStack stack) this.setItemSlot(EquipmentSlot.MAINHAND, stack, false);
+    }
+
+    @Override
+    public void setItemSlotMainHandAir() {
+        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.AIR), false);
+    }
+
+    @Override
+    public void dropItemFromMouth() {
+        getBukkitEntity().getWorld().dropItem(
+            getBukkitEntity().getLocation(),
+            CraftItemStack.asBukkitCopy(this.getItemBySlot(EquipmentSlot.MAINHAND)));
+    }
+
+    @Override
+    public void setDeltaMovement(double x, double y, double z) {
+        this.setDeltaMovement(new Vec3(x, y, z));
+    }
+
+    @Override
+    public void spawnSmokeParticle() {
+        getBukkitEntity().getWorld().spawnParticle(
+            org.bukkit.Particle.SMOKE, getBukkitEntity().getLocation(), 10);
+    }
+
+    @Override
+    public boolean hasPermission(String permission) {
+        return interactingPlayer != null && interactingPlayer.hasPermission(permission);
+    }
+
+    @Override
+    public void setVariant(Object variant) {
+        if (variant instanceof Fox.Variant foxVariant) {
+            super.setVariant(foxVariant);
+        }
+    }
+
+    @Override
+    public void setFoxCustomName(String name) {
+        getBukkitEntity().setCustomName(name);
+    }
+
+    @Override
+    public void setFoxCustomNameVisible(boolean visible) {
+        getBukkitEntity().setCustomNameVisible(visible);
+    }
+
+    @Override
+    public void heal(float amount) {
+        super.heal(amount, EntityRegainHealthEvent.RegainReason.EATING);
+    }
+
+    @Override
+    public boolean isBaby() {
+        return super.isBaby();
+    }
+
+    @Override
+    public boolean isCrouching() {
+        return super.isCrouching();
+    }
+
+    @Override
+    public boolean isSpectator() {
+        return interactingPlayer != null && interactingPlayer.getGameMode() == GameMode.SPECTATOR;
+    }
+
+    @Override
+    public void setOrderedToSit(boolean sit) {
+        this.goalSitWhenOrdered.setOrderedToSit(sit);
+    }
+
+    @Override
+    public boolean isOrderedToSit() {
+        return this.goalSitWhenOrdered.isOrderedToSit();
+    }
+
+    @Override
+    public void setOrderedToSleep(boolean sleep) {
+        this.goalSleepWhenOrdered.setOrderedToSleep(sleep);
+    }
+
+    @Override
+    public boolean isOrderedToSleep() {
+        return this.goalSleepWhenOrdered.isOrderedToSleep();
+    }
 }

@@ -29,7 +29,7 @@ public class FoxPathfinderGoalSleepWithOwner extends Goal {
         } else if (this.fox.isOrderedToSleep()) {
             return false;
         } else {
-            LivingEntity entityliving = this.fox.getOwner();
+            LivingEntity entityliving = (LivingEntity) this.fox.getOwner();
             if (entityliving instanceof Player) {
                 this.ownerPlayer = (Player)entityliving;
                 if (!entityliving.isSleeping()) {

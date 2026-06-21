@@ -29,7 +29,7 @@ public class FoxPathfinderGoalSitWhenOrdered extends Goal {
         } else if (this.mob.isFallFlying()) {
             return false;
         } else {
-            LivingEntity entityliving = this.mob.getOwner();
+            LivingEntity entityliving = (LivingEntity) this.mob.getOwner();
             return entityliving == null || ((!(this.mob.distanceToSqr(entityliving) < 144.0D) || entityliving.getLastHurtByMob() == null) && this.mob.isOrderedToSit());
         }
     }

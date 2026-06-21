@@ -48,7 +48,7 @@ public class FoxPathfinderGoalFollowOwner extends Goal {
     }
 
     public boolean canUse() {
-        LivingEntity entityliving = this.tamableFox.getOwner();
+        LivingEntity entityliving = (LivingEntity) this.tamableFox.getOwner();
         if (entityliving == null) {
             return false;
         } else if (entityliving.isSpectator()) {

@@ -21,7 +21,7 @@ public class FoxPathfinderGoalOwnerHurtByTarget extends TargetGoal {
 
     public boolean canUse() {
         if (this.tameAnimal.isTamed() && !this.tameAnimal.isOrderedToSit() && !this.tameAnimal.isOrderedToSleep()) {
-            LivingEntity entityliving = this.tameAnimal.getOwner();
+            LivingEntity entityliving = (LivingEntity) this.tameAnimal.getOwner();
             if (entityliving == null) {
                 return false;
             } else {
@@ -36,7 +36,7 @@ public class FoxPathfinderGoalOwnerHurtByTarget extends TargetGoal {
 
     public void start() {
         NMSUtil.setTarget(this.mob, this.ownerLastHurtBy, TargetReason.TARGET_ATTACKED_OWNER);
-        LivingEntity entityliving = this.tameAnimal.getOwner();
+        LivingEntity entityliving = (LivingEntity) this.tameAnimal.getOwner();
         if (entityliving != null) {
             this.timestamp = entityliving.getLastHurtByMobTimestamp();
         }
