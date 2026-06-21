@@ -209,7 +209,7 @@ public class EntityTamableFox extends EntityFox implements ITamableFoxAdapter {
 
     public EnumInteractionResult b(EntityHuman entityhuman, EnumHand enumhand) {
         this.setInteractingPlayer((org.bukkit.entity.Player) entityhuman.getBukkitEntity());
-        Object result = TamableFoxLogic.handleMobInteract(this, this.getEquipment(EnumItemSlot.MAINHAND), enumhand);
+        Object result = TamableFoxLogic.handleMobInteract(this, entityhuman.getItemInMainHand(), enumhand);
         if (result == null) {
             return super.b(entityhuman, enumhand);
         }
