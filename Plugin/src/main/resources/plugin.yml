@@ -1,4 +1,4 @@
-name: Tamable Foxes (Community Port)
+name: tamablefoxes
 version: ${project.version}
 main: com.minecanton209.tamablefoxes.TamableFoxes
 api-version: 1.14
