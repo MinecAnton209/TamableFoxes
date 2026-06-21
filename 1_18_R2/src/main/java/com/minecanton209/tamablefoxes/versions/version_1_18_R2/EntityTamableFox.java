@@ -567,14 +567,16 @@ public class EntityTamableFox extends Fox {
     // When the fox dies, show a chat message, and remove the player's stored tamed foxed.
     @Override
     public void die(DamageSource damageSource) {
-        if (!this.getCommandSenderWorld().isClientSide && this.getCommandSenderWorld().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES) && this.getOwner() instanceof ServerPlayer) {
-            this.getOwner().sendMessage(this.getCombatTracker().getDeathMessage(), getOwnerUUID());
+        LivingEntity owner = this.getOwner();
+
+        if (!this.getCommandSenderWorld().isClientSide && this.getCommandSenderWorld().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES) && owner instanceof ServerPlayer) {
+            owner.sendMessage(this.getCombatTracker().getDeathMessage(), getOwnerUUID());
         }
 
         // Remove the amount of foxes the player has tamed if the limit is enabled.
-        if (Config.getMaxPlayerFoxTames() > 0 && this.getOwner() != null) {
+        if (Config.getMaxPlayerFoxTames() > 0 && owner != null) {
             SQLiteHelper sqliteHelper = SQLiteHelper.getInstance(Utils.tamableFoxesPlugin);
-            sqliteHelper.removePlayerFoxAmount(this.getOwner().getUUID(), 1);
+            sqliteHelper.removePlayerFoxAmount(owner.getUUID(), 1);
         }
 
         super.die(damageSource);
