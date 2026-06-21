@@ -44,16 +44,13 @@ import java.util.function.Predicate;
 
 public class EntityTamableFox extends Fox {
 
-    protected static final EntityDataAccessor<Boolean> tamed;
-    protected static final EntityDataAccessor<Optional<UUID>> ownerUUID;
+    private boolean tamed;
+    private UUID ownerUUID;
 
     //private static final EntityDataAccessor<Byte> bw; // DATA_FLAGS_ID
     private static final Predicate<Entity> AVOID_PLAYERS; // AVOID_PLAYERS
 
     static {
-        tamed = SynchedEntityData.defineId(EntityTamableFox.class, EntityDataSerializers.BOOLEAN);
-        ownerUUID = SynchedEntityData.defineId(EntityTamableFox.class, EntityDataSerializers.OPTIONAL_UUID);
-
         AVOID_PLAYERS = (entity) -> !entity.isCrouching();// && EntitySelector.test(entity);
     }
 
@@ -211,12 +208,7 @@ public class EntityTamableFox extends Fox {
         setFlag(128, defending);
     }
 
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(tamed, false);
-        this.entityData.define(ownerUUID, Optional.empty());
-    }
+
 
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -272,11 +264,11 @@ public class EntityTamableFox extends Fox {
 
     public boolean isTamed() {
         UUID ownerUuid = getOwnerUUID();
-        return this.entityData.get(tamed) && (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0)));
+        return this.tamed && (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0)));
     }
 
     public void setTamed(boolean tamed) {
-        this.entityData.set(EntityTamableFox.tamed, tamed);
+        this.tamed = tamed;
         this.reassessTameGoals();
 
         if (tamed) {
@@ -475,11 +467,11 @@ public class EntityTamableFox extends Fox {
 
     @Nullable
     public UUID getOwnerUUID() {
-        return (UUID) ((Optional) this.entityData.get(ownerUUID)).orElse(null);
+        return this.ownerUUID;
     }
 
     public void setOwnerUUID(@Nullable UUID ownerUuid) {
-        this.entityData.set(ownerUUID, Optional.ofNullable(ownerUuid));
+        this.ownerUUID = ownerUuid;
     }
 
     public void tame(Player owner) {

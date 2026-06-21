@@ -12,8 +12,7 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
@@ -71,14 +70,12 @@ import org.bukkit.event.entity.EntityRegainHealthEvent;
 
 public class EntityTamableFox extends Fox {
 
-    protected static final EntityDataAccessor<Boolean> tamed;
+    private boolean tamed;
 
     //private static final EntityDataAccessor<Byte> bw; // DATA_FLAGS_ID
     private static final Predicate<Entity> AVOID_PLAYERS; // AVOID_PLAYERS
 
     static {
-        tamed = SynchedEntityData.defineId(EntityTamableFox.class, EntityDataSerializers.BOOLEAN);
-
         AVOID_PLAYERS = (entity) -> !entity.isCrouching();// && EntitySelector.test(entity);
     }
 
@@ -234,12 +231,6 @@ public class EntityTamableFox extends Fox {
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder datawatcher) {
-        super.defineSynchedData(datawatcher);
-        datawatcher.define(tamed, false);
-    }
-
-    @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         if (this.getOwnerUUID() == null) {
@@ -293,11 +284,11 @@ public class EntityTamableFox extends Fox {
 
     public boolean isTamed() {
         UUID ownerUuid = getOwnerUUID();
-        return this.entityData.get(tamed) && (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0)));
+        return this.tamed && (ownerUuid != null && !ownerUuid.equals(new UUID(0, 0)));
     }
 
     public void setTamed(boolean tamed) {
-        this.entityData.set(EntityTamableFox.tamed, tamed);
+        this.tamed = tamed;
         this.reassessTameGoals();
 
         if (tamed) {
