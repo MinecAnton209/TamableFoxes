@@ -2,7 +2,7 @@
 
 [![SpigotMC](https://img.shields.io/badge/SpigotMC-Coming_Soon-FF6600?logo=spigotmc&logoColor=white&style=flat-square)](https://www.spigotmc.org/resources/69537/)
 [![Modrinth](https://img.shields.io/badge/Modrinth-Coming_Soon-1BD96A?logo=modrinth&logoColor=white&style=flat-square)](https://modrinth.com/)
-[![GitHub](https://img.shields.io/badge/GitHub-bgfoxsland/TamableFoxes--Revived-181717?logo=github&logoColor=white&style=flat-square)](https://github.com/bgfoxsland/TamableFoxes-Revived)
+[![GitHub](https://img.shields.io/badge/GitHub-MinecAnton209/TamableFoxes-181717?logo=github&logoColor=white&style=flat-square)](https://github.com/MinecAnton209/TamableFoxes)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 [![Java 25+](https://img.shields.io/badge/Java-25%2B-ED8B00?logo=openjdk&logoColor=white&style=flat-square)](https://adoptium.net/)
 
