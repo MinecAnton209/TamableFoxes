@@ -518,7 +518,7 @@ public class EntityTamableFox extends EntityFox {
 
     // When the fox dies, show a chat message, and remove the player's stored tamed foxed.
     public void die(DamageSource damageSource) {
-        LivingEntity owner = this.getOwner();
+        EntityLiving owner = this.getOwner();
 
         if (!this.world.isClientSide && this.world.getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES) && owner instanceof EntityPlayer) {
             owner.sendMessage(this.getCombatTracker().getDeathMessage(), getOwnerUUID());
