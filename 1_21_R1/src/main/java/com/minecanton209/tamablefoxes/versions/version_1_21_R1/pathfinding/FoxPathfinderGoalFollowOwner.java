@@ -115,7 +115,7 @@ public class FoxPathfinderGoalFollowOwner extends Goal {
         } else if (!this.canTeleportTo(new BlockPos(i, j, k))) {
             return false;
         } else {
-            CraftEntity entity = this.tamableFox.getBukkitEntity();
+            CraftEntity entity = (CraftEntity) this.tamableFox.getBukkitEntity();
             Location to = new Location(entity.getWorld(), (double)i + 0.5D, (double)j, (double)k + 0.5D, this.tamableFox.getYRot(), this.tamableFox.getXRot());
             EntityTeleportEvent event = new EntityTeleportEvent(entity, entity.getLocation(), to);
             this.tamableFox.level().getCraftServer().getPluginManager().callEvent(event);

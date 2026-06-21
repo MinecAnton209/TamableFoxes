@@ -364,7 +364,6 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         return entity == this.getOwnerNms();
     }
 
-    @Override
     public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
         if (entity == null) return false;
         Object owner = this.getOwner();
@@ -402,7 +401,6 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         }
     }
 
-    @Override
     public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
         if (target == null || owner == null) return false;
         net.minecraft.world.entity.LivingEntity nmsTarget = (net.minecraft.world.entity.LivingEntity) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity) target).getHandle();

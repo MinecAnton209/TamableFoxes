@@ -430,13 +430,11 @@ public class EntityTamableFox extends EntityFox implements ITamableFoxAdapter {
         return this.isSleeping();
     }
 
-    @Override
     public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
         EntityLiving owner = this.getOwner();
         return owner != null && owner.getBukkitEntity() == entity;
     }
 
-    @Override
     public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
         return this.a((EntityLiving) target, (EntityLiving) owner);
     }

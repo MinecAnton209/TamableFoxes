@@ -343,7 +343,6 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         return entity == this.getOwner();
     }
 
-    @Override
     public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
         return entity != null && entity.equals(this.getBukkitEntity());
     }
@@ -353,7 +352,6 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
      This code being from EntityWolf also means that wolves will want to attack foxes
      Our life would be so much easier if we could extend both EntityFox and EntityTameableAnimal
     */
-    @Override
     public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
         return !(target instanceof org.bukkit.entity.Creeper) && !(target instanceof org.bukkit.entity.Ghast);
     }

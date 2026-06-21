@@ -15,6 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -461,12 +463,10 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         return (Goal) Utils.instantiatePrivateInnerClass(Fox.class, innerName, this, Arrays.asList(), Arrays.asList());
     }
 
-    @Override
     public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
         return entity != null && entity.equals(this.getBukkitEntity());
     }
 
-    @Override
     public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
         return !(target instanceof org.bukkit.entity.Creeper) && !(target instanceof org.bukkit.entity.Ghast);
     }

@@ -411,12 +411,18 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
 
     @Override
     public boolean isEdible(Object itemstack) {
-        return itemstack instanceof ItemStack stack && stack.isEdible();
+        if (itemstack instanceof ItemStack stack) {
+            return stack.get(DataComponents.FOOD) != null;
+        }
+        return false;
     }
 
     @Override
     public boolean isMeat(Object itemstack) {
-        return itemstack instanceof ItemStack stack && stack.builtInRegistryHolder().is(ItemTags.MEAT);
+        if (itemstack instanceof ItemStack stack) {
+            return stack.is(ItemTags.MEAT);
+        }
+        return false;
     }
 
     @Override
@@ -478,26 +484,10 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
     }
 
     @Override
-    public void setVariant(Object variant) {
-        if (variant instanceof Fox.Variant foxVariant) {
-            super.setVariant(foxVariant);
-        }
-    }
+    public void setFoxCustomName(String name) { ((org.bukkit.entity.Entity) this.getBukkitEntity()).setCustomName(name); }
 
     @Override
-    public Object getVariant() { return super.getVariant(); }
-
-    @Override
-    public void setFoxCustomName(String name) { getBukkitEntity().setCustomName(name); }
-
-    @Override
-    public void setFoxCustomNameVisible(boolean visible) { getBukkitEntity().setCustomNameVisible(visible); }
-
-    @Override
-    public float getHealth() { return super.getHealth(); }
-
-    @Override
-    public float getMaxHealth() { return (float) super.getMaxHealth(); }
+    public void setFoxCustomNameVisible(boolean visible) { ((org.bukkit.entity.Entity) this.getBukkitEntity()).setCustomNameVisible(visible); }
 
     @Override
     public void heal(float amount) {
@@ -515,6 +505,4 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         return interactingPlayer != null && interactingPlayer.getGameMode() == GameMode.SPECTATOR;
     }
 
-    @Override
-    public org.bukkit.entity.Entity getBukkitEntity() { return super.getBukkitEntity(); }
 }

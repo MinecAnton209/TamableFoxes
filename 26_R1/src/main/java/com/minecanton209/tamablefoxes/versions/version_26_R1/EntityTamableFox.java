@@ -100,7 +100,7 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         if (isTamed()) {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(24.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3.0D);
-            this.setHealth(this.getMaxHealth());
+            this.setHealth((float) this.getMaxHealth());
         } else {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0D);
@@ -291,7 +291,7 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0D);
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0D);
         }
-        this.setHealth(this.getMaxHealth());
+        this.setHealth((float) this.getMaxHealth());
     }
 
     // Remove untamed goals if its tamed.
@@ -479,13 +479,19 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
 
     @Override
     public boolean isEdible(Object itemstack) {
-        return itemstack instanceof ItemStack stack && stack.isEdible();
+        if (itemstack instanceof ItemStack stack) {
+            FoodProperties fp = stack.get(DataComponents.FOOD);
+            return fp != null;
+        }
+        return false;
     }
 
     @Override
     public boolean isMeat(Object itemstack) {
-        return itemstack instanceof ItemStack stack
-            && stack.builtInRegistryHolder().is(ItemTags.MEAT);
+        if (itemstack instanceof ItemStack stack) {
+            return stack.is(ItemTags.MEAT);
+        }
+        return false;
     }
 
     @Override
@@ -551,45 +557,18 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
     }
 
     @Override
-    public void setVariant(Object variant) {
-        if (variant instanceof net.minecraft.world.entity.animal.Fox.Variant foxVariant) {
-            super.setVariant(foxVariant);
-        }
-    }
-
-    @Override
-    public Object getVariant() {
-        return super.getVariant();
-    }
-
-    @Override
     public void setFoxCustomName(String name) {
-        getBukkitEntity().setCustomName(name);
+        ((org.bukkit.entity.Entity) getBukkitEntity()).setCustomName(name);
     }
 
     @Override
     public void setFoxCustomNameVisible(boolean visible) {
-        getBukkitEntity().setCustomNameVisible(visible);
-    }
-
-    @Override
-    public double getHealth() {
-        return super.getHealth();
-    }
-
-    @Override
-    public double getMaxHealth() {
-        return super.getMaxHealth();
+        ((org.bukkit.entity.Entity) getBukkitEntity()).setCustomNameVisible(visible);
     }
 
     @Override
     public void heal(float amount) {
         super.heal(amount, EntityRegainHealthEvent.RegainReason.EATING);
-    }
-
-    @Override
-    public boolean isBaby() {
-        return super.isBaby();
     }
 
     @Override
@@ -600,11 +579,6 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
     @Override
     public boolean isSpectator() {
         return interactingPlayer != null && interactingPlayer.getGameMode() == GameMode.SPECTATOR;
-    }
-
-    @Override
-    public org.bukkit.entity.Entity getBukkitEntity() {
-        return super.getBukkitEntity();
     }
 
     @Override

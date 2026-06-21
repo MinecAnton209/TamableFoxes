@@ -440,12 +440,10 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
         return (Goal) Utils.instantiatePrivateInnerClass(Fox.class, innerName, this, Arrays.asList(), Arrays.asList());
     }
 
-    @Override
     public boolean isOwnedBy(org.bukkit.entity.LivingEntity entity) {
         return entity != null && entity.equals(this.getBukkitEntity());
     }
 
-    @Override
     public boolean wantsToAttack(org.bukkit.entity.LivingEntity target, org.bukkit.entity.LivingEntity owner) {
         return !(target instanceof org.bukkit.entity.Creeper) && !(target instanceof org.bukkit.entity.Ghast);
     }
