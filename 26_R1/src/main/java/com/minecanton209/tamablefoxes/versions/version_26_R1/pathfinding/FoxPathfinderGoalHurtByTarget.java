@@ -4,6 +4,8 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
@@ -31,7 +33,7 @@ public class FoxPathfinderGoalHurtByTarget extends TargetGoal {
         int i = this.mob.getLastHurtByMobTimestamp();
         LivingEntity entityliving = this.mob.getLastHurtByMob();
         if (i != this.timestamp && entityliving != null) {
-            if (entityliving.getType() == EntityTypes.PLAYER && Boolean.TRUE.equals(
+            if (entityliving.getType() == BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("player")) && Boolean.TRUE.equals(
                 this.mob.level().getWorld().getGameRuleValue(
                     GameRule.UNIVERSAL_ANGER))) {
                 return false;

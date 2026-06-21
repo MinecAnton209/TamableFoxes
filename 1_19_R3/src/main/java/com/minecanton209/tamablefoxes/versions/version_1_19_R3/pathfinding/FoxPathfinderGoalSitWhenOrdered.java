@@ -43,6 +43,12 @@ public class FoxPathfinderGoalSitWhenOrdered extends Goal {
         }, 1L);
     }
 
+    public void tick() {
+        if (this.orderedToSit) {
+            this.mob.getNavigation().stop();
+        }
+    }
+
     public void stop() {
         this.mob.setSitting(false);
         this.orderedToSit = false;

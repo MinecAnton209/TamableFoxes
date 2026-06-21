@@ -9,10 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
-import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -486,7 +487,7 @@ public class EntityTamableFox extends Fox {
 
     @Override
     public EntityTamableFox getBreedOffspring(ServerLevel worldserver, AgeableMob entityageable) {
-        EntityTamableFox entityfox = (EntityTamableFox) EntityTypes.FOX.create(worldserver, EntitySpawnReason.BREEDING);
+        EntityTamableFox entityfox = (EntityTamableFox) ((EntityType<Fox>) BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("fox"))).create(worldserver, EntitySpawnReason.BREEDING);
         entityfox.setVariant(this.getRandom().nextBoolean() ? this.getVariant() : ((Fox)entityageable).getVariant());
 
         UUID uuid = this.getOwnerUUID();
@@ -512,8 +513,14 @@ public class EntityTamableFox extends Fox {
         this.setOwnerUUID(owner.getUUID());
 
         // Give the player the taming advancement.
-        if (owner instanceof ServerPlayer) {
-            CriteriaTriggers.TAME_ANIMAL.trigger((ServerPlayer) owner, this);
+        if (owner instanceof ServerPlayer serverPlayer) {
+            try {
+                Class<?> ctClass = Class.forName("net.minecraft.advancements.triggers.CriteriaTriggers");
+                Object field = ctClass.getField("TAME_ANIMAL").get(null);
+                java.lang.reflect.Method triggerMethod = field.getClass().getMethod("trigger", ServerPlayer.class, net.minecraft.world.entity.Entity.class);
+                triggerMethod.invoke(field, serverPlayer, this);
+            } catch (Exception ignored) {
+            }
         }
     }
 

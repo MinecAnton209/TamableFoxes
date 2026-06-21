@@ -2,8 +2,9 @@ package com.minecanton209.tamablefoxes.versions.version_26_R1;
 
 import java.lang.reflect.Field;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.fox.Fox;
 import com.minecanton209.tamablefoxes.util.NMSInterface;
 import com.minecanton209.tamablefoxes.util.io.Config;
@@ -19,9 +20,10 @@ public class NMSInterface_26_R1 implements NMSInterface {
     public void registerCustomFoxEntity() {
 
         try { // Replace the fox entity
-            Field field = EntityTypes.FOX.getClass().getDeclaredField("factory"); // factory = factory
+            EntityType<Fox> foxType = (EntityType<Fox>) BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.withDefaultNamespace("fox"));
+            Field field = foxType.getClass().getDeclaredField("factory"); // factory = factory
             field.setAccessible(true);
-            field.set(EntityTypes.FOX, (EntityType.EntityFactory<Fox>) EntityTamableFox::new);
+            field.set(foxType, (EntityType.EntityFactory<Fox>) EntityTamableFox::new);
             Bukkit.getServer().getConsoleSender().sendMessage(Config.getPrefix() + ChatColor.GREEN + LanguageConfig.getSuccessReplaced());
         } catch (Exception e) {
             Bukkit.getServer().getConsoleSender().sendMessage(Config.getPrefix() + ChatColor.RED + LanguageConfig.getFailureReplace());
