@@ -52,6 +52,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <anvilgui.version>1.10.13-SNAPSHOT</anvilgui.version>
+        <xseries.version>13.7.0</xseries.version>
     </properties>
 
     <repositories>
@@ -76,6 +77,11 @@
                 <artifactId>anvilgui</artifactId>
                 <version>${anvilgui.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.cryptomorin</groupId>
+                <artifactId>XSeries</artifactId>
+                <version>${xseries.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -98,7 +104,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.6.1-SNAPSHOT</version>
+                    <version>3.6.2</version>
                     <executions>
                         <execution>
                             <phase>package</phase>

@@ -30,5 +30,10 @@
             <groupId>net.wesjd</groupId>
             <artifactId>anvilgui</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.cryptomorin</groupId>
+            <artifactId>XSeries</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
