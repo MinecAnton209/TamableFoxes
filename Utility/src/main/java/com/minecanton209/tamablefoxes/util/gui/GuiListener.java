@@ -12,14 +12,16 @@ public class GuiListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         InventoryHolder holder = event.getInventory().getHolder();
 
-        event.setCancelled(true);
-
-        if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getInventory().getSize()) return;
-
         if (holder instanceof Gui gui) {
-            gui.handleClick(event);
+            event.setCancelled(true);
+            if (event.getRawSlot() >= 0 && event.getRawSlot() < event.getInventory().getSize()) {
+                gui.handleClick(event);
+            }
         } else if (holder instanceof PagedGui pagedGui) {
-            pagedGui.handleClick(event);
+            event.setCancelled(true);
+            if (event.getRawSlot() >= 0 && event.getRawSlot() < event.getInventory().getSize()) {
+                pagedGui.handleClick(event);
+            }
         }
     }
 

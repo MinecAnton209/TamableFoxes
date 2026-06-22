@@ -61,11 +61,12 @@ public final class TamableFoxLogic {
             }
         }
 
-        // Interact with owner
-        if (fox.isOwnedBy(fox.getBukkitPlayer()) && isMainHand(hand)) {
-            Object superResult = null; // placeholder for super.mobInteract result
+        // Interact with owner — use UUID comparison (Bukkit Player != NMS LivingEntity)
+        if (isOwnedBy(fox) && isMainHand(hand)) {
+            Player player = fox.getBukkitPlayer();
+            boolean sneaking = player != null && player.isSneaking();
 
-            if (!fox.isCrouching()) {
+            if (!sneaking) {
                 // Not sneaking: toggle sit or show nametag
                 if (isNameTag(fox, itemstack)) {
                     openRenameGui(fox);
@@ -84,21 +85,16 @@ public final class TamableFoxLogic {
                 }
 
                 if (fox.hasItemInMainHand()) {
+                    // Fox has item in mouth → drop it
                     fox.dropItemFromMouth();
                     fox.setItemSlotMainHandAir();
-                } else if (!fox.hasPermission("tamablefoxes.sneak.interact")) {
-                    // Empty hand + sneaking: toggle sleep
-                    fox.setOrderedToSit(false);
-                    fox.setOrderedToSleep(!fox.isOrderedToSleep());
-                    fox.setDeltaMovement(0, 0, 0);
-                } else {
-                    // Put item in mouth
+                } else if (!fox.hasItemInMainHand() && !isEmptyItem(fox, itemstack) && fox.hasPermission("tamablefoxes.sneak.interact")) {
+                    // Player holds item + has permission → put item in fox's mouth
                     Bukkit.getScheduler().runTaskLaterAsynchronously(
                         Utils.tamableFoxesPlugin, () -> {
                             if (fox.hasPermission("tamablefoxes.sneak.interact")) {
                                 Object copy = fox.copyItemStack(itemstack);
                                 setItemCount(copy, 1);
-                                Player player = fox.getBukkitPlayer();
                                 if (player.getGameMode() != GameMode.CREATIVE) {
                                     fox.shrinkItem(itemstack, 1);
                                 }
@@ -106,6 +102,12 @@ public final class TamableFoxLogic {
                             }
                         }, 1L
                     );
+                    return "SUCCESS";
+                } else {
+                    // Empty hand → toggle sleep
+                    fox.setOrderedToSit(false);
+                    fox.setOrderedToSleep(!fox.isOrderedToSleep());
+                    fox.setDeltaMovement(0, 0, 0);
                     return "SUCCESS";
                 }
             }
@@ -143,10 +145,15 @@ public final class TamableFoxLogic {
 
         // Attempt tame
         if (Math.random() < 0.3D) {
-            // Success
-            fox.setTamed(true);
+            // Success — set owner BEFORE taming so reassessTameGoals() works
             fox.setOwnerUUID(player.getUniqueId());
+            fox.setTamed(true);
             TamableFoxUtil.incrementTameCount(player.getUniqueId());
+
+            // Wake up fox if it was sleeping
+            fox.setOrderedToSleep(false);
+            fox.setOrderedToSit(false);
+            fox.setDeltaMovement(0, 0, 0);
 
             // Heal to full
             fox.heal((float) (fox.getMaxHealth() - fox.getHealth()));
@@ -220,6 +227,13 @@ public final class TamableFoxLogic {
 
     // === NMS-agnostic checks (using XMaterial) ===
 
+    private static boolean isOwnedBy(ITamableFoxAdapter fox) {
+        Player player = fox.getBukkitPlayer();
+        if (player == null) return false;
+        java.util.UUID ownerUUID = fox.getOwnerUUID();
+        return ownerUUID != null && ownerUUID.equals(player.getUniqueId());
+    }
+
     private static boolean isMainHand(Object hand) {
         return hand != null && hand.toString().contains("MAIN_HAND");
     }
@@ -234,6 +248,11 @@ public final class TamableFoxLogic {
         if (bukkit == null) return false;
         XMaterial mat = XMaterial.matchXMaterial(bukkit.getType());
         return mat.name().endsWith("_BUCKET") || mat == XMaterial.BUCKET;
+    }
+
+    private static boolean isEmptyItem(ITamableFoxAdapter fox, Object itemstack) {
+        org.bukkit.inventory.ItemStack bukkit = fox.toBukkitItemStack(itemstack);
+        return bukkit == null || bukkit.getType() == org.bukkit.Material.AIR;
     }
 
     private static void setItemCount(Object itemstack, int count) {
