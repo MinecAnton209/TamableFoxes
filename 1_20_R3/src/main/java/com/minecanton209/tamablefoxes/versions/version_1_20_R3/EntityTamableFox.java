@@ -1,4 +1,4 @@
-﻿package com.minecanton209.tamablefoxes.versions.version_1_20_R3;
+package com.minecanton209.tamablefoxes.versions.version_1_20_R3;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
