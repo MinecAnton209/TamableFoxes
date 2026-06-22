@@ -1,4 +1,5 @@
 # Config for Tamable Foxes
+debug: false
 show-owner-in-fox-name: true
 ask-for-name-after-taming: true
 max-fox-tames: 0

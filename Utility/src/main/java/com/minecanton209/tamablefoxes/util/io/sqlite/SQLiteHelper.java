@@ -46,7 +46,9 @@ public class SQLiteHelper {
                     "`HEALTH` DOUBLE, " +
                     "`MAX_HEALTH` DOUBLE, " +
                     "`SITTING` BOOLEAN, " +
-                    "`SLEEPING` BOOLEAN);";
+                    "`SLEEPING` BOOLEAN, " +
+                    "`FOLLOWING` BOOLEAN DEFAULT 0, " +
+                    "`AGGRESSIVE` BOOLEAN DEFAULT 1);";
 
         try {
             sqLiteHandler.connect(plugin);
@@ -62,6 +64,10 @@ public class SQLiteHelper {
             if (!foxTables.next()) {
                 PreparedStatement statement = sqLiteHandler.getConnection().prepareStatement(foxesQuery);
                 statement.executeUpdate();
+            } else {
+                // Add new columns if they don't exist (migration for existing DBs)
+                addColumnIfNotExists("FOLLOWING", "BOOLEAN DEFAULT 0");
+                addColumnIfNotExists("AGGRESSIVE", "BOOLEAN DEFAULT 1");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -148,8 +154,10 @@ public class SQLiteHelper {
         try {
             sqLiteHandler.connect(plugin);
             String sql = "INSERT OR REPLACE INTO " + foxesTableName +
-                " (FOX_UUID, OWNER_UUID, NAME, WORLD, X, Y, Z, HEALTH, MAX_HEALTH, SITTING, SLEEPING) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                " (FOX_UUID, OWNER_UUID, NAME, WORLD, X, Y, Z, HEALTH, MAX_HEALTH, SITTING, SLEEPING, FOLLOWING, AGGRESSIVE) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
+                "COALESCE((SELECT FOLLOWING FROM " + foxesTableName + " WHERE FOX_UUID=?), 0), " +
+                "COALESCE((SELECT AGGRESSIVE FROM " + foxesTableName + " WHERE FOX_UUID=?), 1))";
             PreparedStatement stmt = sqLiteHandler.getConnection().prepareStatement(sql);
             stmt.setString(1, foxUUID.toString());
             stmt.setString(2, ownerUUID.toString());
@@ -162,6 +170,8 @@ public class SQLiteHelper {
             stmt.setDouble(9, maxHealth);
             stmt.setBoolean(10, sitting);
             stmt.setBoolean(11, sleeping);
+            stmt.setString(12, foxUUID.toString());
+            stmt.setString(13, foxUUID.toString());
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -247,6 +257,8 @@ public class SQLiteHelper {
                 row.put("maxHealth", rs.getDouble("MAX_HEALTH"));
                 row.put("sitting", rs.getBoolean("SITTING"));
                 row.put("sleeping", rs.getBoolean("SLEEPING"));
+                row.put("following", rs.getBoolean("FOLLOWING"));
+                row.put("aggressive", rs.getBoolean("AGGRESSIVE"));
                 result.add(row);
             }
         } catch (SQLException e) {
@@ -278,6 +290,8 @@ public class SQLiteHelper {
                 row.put("maxHealth", rs.getDouble("MAX_HEALTH"));
                 row.put("sitting", rs.getBoolean("SITTING"));
                 row.put("sleeping", rs.getBoolean("SLEEPING"));
+                row.put("following", rs.getBoolean("FOLLOWING"));
+                row.put("aggressive", rs.getBoolean("AGGRESSIVE"));
                 return row;
             }
         } catch (SQLException e) {
@@ -305,6 +319,72 @@ public class SQLiteHelper {
         return false;
     }
 
+    public boolean getFoxFollowing(UUID foxUUID) {
+        sqLiteHandler = SQLiteHandler.getInstance();
+        try {
+            sqLiteHandler.connect(plugin);
+            PreparedStatement stmt = sqLiteHandler.getConnection()
+                .prepareStatement("SELECT FOLLOWING FROM " + foxesTableName + " WHERE FOX_UUID=?");
+            stmt.setString(1, foxUUID.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getBoolean("FOLLOWING");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly();
+        }
+        return false;
+    }
+
+    public void setFoxFollowing(UUID foxUUID, boolean following) {
+        sqLiteHandler = SQLiteHandler.getInstance();
+        try {
+            sqLiteHandler.connect(plugin);
+            PreparedStatement stmt = sqLiteHandler.getConnection()
+                .prepareStatement("UPDATE " + foxesTableName + " SET FOLLOWING=? WHERE FOX_UUID=?");
+            stmt.setBoolean(1, following);
+            stmt.setString(2, foxUUID.toString());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly();
+        }
+    }
+
+    public boolean getFoxAggressive(UUID foxUUID) {
+        sqLiteHandler = SQLiteHandler.getInstance();
+        try {
+            sqLiteHandler.connect(plugin);
+            PreparedStatement stmt = sqLiteHandler.getConnection()
+                .prepareStatement("SELECT AGGRESSIVE FROM " + foxesTableName + " WHERE FOX_UUID=?");
+            stmt.setString(1, foxUUID.toString());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getBoolean("AGGRESSIVE");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly();
+        }
+        return true;
+    }
+
+    public void setFoxAggressive(UUID foxUUID, boolean aggressive) {
+        sqLiteHandler = SQLiteHandler.getInstance();
+        try {
+            sqLiteHandler.connect(plugin);
+            PreparedStatement stmt = sqLiteHandler.getConnection()
+                .prepareStatement("UPDATE " + foxesTableName + " SET AGGRESSIVE=? WHERE FOX_UUID=?");
+            stmt.setBoolean(1, aggressive);
+            stmt.setString(2, foxUUID.toString());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly();
+        }
+    }
+
     private void closeQuietly() {
         if (sqLiteHandler.getConnection() != null) {
             try {
@@ -313,5 +393,17 @@ public class SQLiteHelper {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void addColumnIfNotExists(String column, String type) {
+        try {
+            DatabaseMetaData dbm = sqLiteHandler.getConnection().getMetaData();
+            ResultSet cols = dbm.getColumns(null, null, foxesTableName, column);
+            if (!cols.next()) {
+                PreparedStatement stmt = sqLiteHandler.getConnection()
+                    .prepareStatement("ALTER TABLE " + foxesTableName + " ADD COLUMN `" + column + "` " + type);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException ignored) {}
     }
 }
