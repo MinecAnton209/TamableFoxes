@@ -17,6 +17,10 @@ commands:
   givefox:
     usage: /givefox [player name]
     description: Give a fox to another player.
+  fox:
+    aliases: [ foxmenu ]
+    usage: /fox
+    description: Open the fox command menu.
 permissions:
   tamablefoxes.givefox.give.others:
     description: "Allows the player to give another players fox to a player with /givefox"
@@ -42,3 +46,6 @@ permissions:
   tamablefoxes.tame.anywhere:
     description: "Lets players bypass the banned worlds in config.yml (so they can tame in any world)."
     default: op
+  tamablefoxes.command.fox:
+    description: "Allows using /fox command"
+    default: true

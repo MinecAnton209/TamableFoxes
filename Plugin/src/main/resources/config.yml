@@ -9,3 +9,22 @@ no-tame-worlds:
 
 tamed-behavior:
   attack-wild-animals: true
+
+# Taming food: list of material names that can tame foxes
+taming-food:
+  items:
+    - CHICKEN
+  chance: 0.3
+
+# Fox stats (applied after taming)
+fox-stats:
+  wild:
+    max-health: 10.0
+  tamed:
+    max-health: 20.0
+    attack-damage: 4.0
+
+# Effects when taming succeeds (set sound to "disabled" to turn off)
+taming-effects:
+  hearts: true
+  sound: ENTITY_PLAYER_LEVELUP

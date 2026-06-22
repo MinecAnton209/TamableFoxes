@@ -3,11 +3,13 @@ package com.minecanton209.tamablefoxes.util;
 import java.util.UUID;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityRegainHealthEvent;
 import com.minecanton209.tamablefoxes.util.io.Config;
 import com.minecanton209.tamablefoxes.util.io.LanguageConfig;
+import com.minecanton209.tamablefoxes.util.io.sqlite.SQLiteHelper;
 import com.cryptomorin.xseries.XMaterial;
+import com.cryptomorin.xseries.XSound;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import java.util.Arrays;
@@ -120,7 +122,7 @@ public final class TamableFoxLogic {
             ITamableFoxAdapter fox,
             Object itemstack
     ) {
-        if (!fox.isChicken(itemstack)) {
+        if (!isTamingFood(fox, itemstack)) {
             return null;
         }
 
@@ -138,13 +140,14 @@ public final class TamableFoxLogic {
             return "SUCCESS";
         }
 
-        // Remove chicken item
+        // Remove taming food item
         if (player.getGameMode() != GameMode.CREATIVE) {
             fox.shrinkItem(itemstack, 1);
         }
 
         // Attempt tame
-        if (Math.random() < 0.3D) {
+        double chance = Config.getTamingChance();
+        if (Math.random() < chance) {
             // Success — set owner BEFORE taming so reassessTameGoals() works
             fox.setOwnerUUID(player.getUniqueId());
             fox.setTamed(true);
@@ -157,6 +160,15 @@ public final class TamableFoxLogic {
 
             // Heal to full
             fox.heal((float) (fox.getMaxHealth() - fox.getHealth()));
+
+            // Apply stats from config
+            applyTamedStats(fox);
+
+            // Register in SQLite
+            registerFoxInDb(fox);
+
+            // Taming effects
+            spawnTamingEffects(fox);
 
             // Show name if configured
             if (Config.doesShowOwnerInFoxName()) {
@@ -179,6 +191,68 @@ public final class TamableFoxLogic {
             fox.spawnSmokeParticle();
             sendFoxMessage(player, LanguageConfig.getFoxDoesntTrust());
             return "SUCCESS";
+        }
+    }
+
+    // === SQLite fox registry ===
+
+    private static void registerFoxInDb(ITamableFoxAdapter fox) {
+        try {
+            org.bukkit.entity.Entity bukkit = fox.getBukkitEntity();
+            if (bukkit == null) return;
+            Location loc = bukkit.getLocation();
+            String name = bukkit.getCustomName() != null ? ChatColor.stripColor(bukkit.getCustomName()) : "";
+            SQLiteHelper.getInstance(Utils.tamableFoxesPlugin).registerFox(
+                bukkit.getUniqueId(),
+                fox.getOwnerUUID(),
+                name,
+                loc.getWorld().getName(),
+                loc.getX(), loc.getY(), loc.getZ(),
+                fox.getHealth(),
+                fox.getMaxHealth(),
+                fox.isOrderedToSit(),
+                fox.isOrderedToSleep()
+            );
+        } catch (Exception ignored) {}
+    }
+
+    // === Taming food check ===
+
+    private static boolean isTamingFood(ITamableFoxAdapter fox, Object itemstack) {
+        org.bukkit.inventory.ItemStack bukkit = fox.toBukkitItemStack(itemstack);
+        if (bukkit == null) return false;
+        String material = bukkit.getType().name();
+        for (String food : Config.getTamingFoodItems()) {
+            if (food.equalsIgnoreCase(material)) return true;
+        }
+        return false;
+    }
+
+    // === Taming effects ===
+
+    private static void applyTamedStats(ITamableFoxAdapter fox) {
+        double maxHealth = Config.getTamedMaxHealth();
+        fox.setMaxHealth(maxHealth);
+        fox.heal((float) (maxHealth - fox.getHealth()));
+
+        double attackDamage = Config.getTamedAttackDamage();
+        if (attackDamage > 0) {
+            fox.setAttributeAttackDamage(attackDamage);
+        }
+    }
+
+    private static void spawnTamingEffects(ITamableFoxAdapter fox) {
+        if (Config.doesTamingShowHearts()) {
+            fox.spawnHeartParticle();
+        }
+
+        String soundName = Config.getTamingSound();
+        if (soundName != null && !soundName.equalsIgnoreCase("disabled")) {
+            Player player = fox.getBukkitPlayer();
+            if (player != null) {
+                XSound.matchXSound(soundName).ifPresent(xsound ->
+                    xsound.play(player, 1.0f, 1.0f));
+            }
         }
     }
 

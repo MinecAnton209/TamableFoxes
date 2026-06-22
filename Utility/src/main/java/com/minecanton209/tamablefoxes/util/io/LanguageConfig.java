@@ -218,6 +218,70 @@ public class LanguageConfig extends YamlConfiguration  {
     public static String getReloadMessage() {
         return config.getString("reloaded-message");
     }
+
+    // Fox command GUI
+    public static String getFoxGuiTitle() {
+        return config.getString("fox-gui-title");
+    }
+
+    public static String getFoxGuiTeleportName() {
+        return config.getString("fox-gui-teleport-name");
+    }
+
+    public static String getFoxGuiTeleportLore() {
+        return config.getString("fox-gui-teleport-lore");
+    }
+
+    public static String getFoxGuiSitName() {
+        return config.getString("fox-gui-sit-name");
+    }
+
+    public static String getFoxGuiSitLore() {
+        return config.getString("fox-gui-sit-lore");
+    }
+
+    public static String getFoxGuiHealName() {
+        return config.getString("fox-gui-heal-name");
+    }
+
+    public static String getFoxGuiHealLore() {
+        return config.getString("fox-gui-heal-lore");
+    }
+
+    public static String getFoxGuiRenameName() {
+        return config.getString("fox-gui-rename-name");
+    }
+
+    public static String getFoxGuiRenameLore() {
+        return config.getString("fox-gui-rename-lore");
+    }
+
+    public static String getFoxGuiStatusName() {
+        return config.getString("fox-gui-status-name");
+    }
+
+    public static String getFoxGuiStatusLore(String health, String maxHealth, String state) {
+        return config.getString("fox-gui-status-lore")
+            .replace("%HEALTH%", health)
+            .replace("%MAX_HEALTH%", maxHealth)
+            .replace("%STATE%", state);
+    }
+
+    public static String getFoxGuiSleepName() {
+        return config.getString("fox-gui-sleep-name");
+    }
+
+    public static String getFoxGuiSleepLore() {
+        return config.getString("fox-gui-sleep-lore");
+    }
+
+    public static String getFoxNotYourFox() {
+        return config.getString("fox-not-your-fox");
+    }
+
+    public static String getFoxNoFoxFound() {
+        return config.getString("fox-no-fox-found");
+    }
 }
 
 	

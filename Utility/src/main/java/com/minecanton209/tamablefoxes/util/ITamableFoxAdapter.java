@@ -81,6 +81,44 @@ public interface ITamableFoxAdapter {
     // === Particles ===
     void spawnSmokeParticle();
 
+    default void spawnHeartParticle() {
+        org.bukkit.entity.Entity e = getBukkitEntity();
+        if (e != null) {
+            e.getWorld().spawnParticle(org.bukkit.Particle.HEART, e.getLocation(), 5);
+        }
+    }
+
+    // === Stats (Bukkit API — works across all versions) ===
+    default void setMaxHealth(double health) {
+        try {
+            org.bukkit.entity.Entity e = getBukkitEntity();
+            if (!(e instanceof org.bukkit.entity.LivingEntity le)) return;
+            org.bukkit.attribute.Attribute attr = null;
+            try { attr = org.bukkit.attribute.Attribute.valueOf("MAX_HEALTH"); }
+            catch (IllegalArgumentException ex) {
+                try { attr = org.bukkit.attribute.Attribute.valueOf("GENERIC_MAX_HEALTH"); }
+                catch (IllegalArgumentException ex2) { return; }
+            }
+            var instance = le.getAttribute(attr);
+            if (instance != null) instance.setBaseValue(health);
+        } catch (Exception ignored) {}
+    }
+
+    default void setAttributeAttackDamage(double damage) {
+        try {
+            org.bukkit.entity.Entity e = getBukkitEntity();
+            if (!(e instanceof org.bukkit.entity.LivingEntity le)) return;
+            org.bukkit.attribute.Attribute attr = null;
+            try { attr = org.bukkit.attribute.Attribute.valueOf("ATTACK_DAMAGE"); }
+            catch (IllegalArgumentException ex) {
+                try { attr = org.bukkit.attribute.Attribute.valueOf("GENERIC_ATTACK_DAMAGE"); }
+                catch (IllegalArgumentException ex2) { return; }
+            }
+            var instance = le.getAttribute(attr);
+            if (instance != null) instance.setBaseValue(damage);
+        } catch (Exception ignored) {}
+    }
+
     // === Combat ===
     // Default: avoids clash with NMS LivingEntity parameter types
     default boolean isOwnedBy(Object entity) { return false; }

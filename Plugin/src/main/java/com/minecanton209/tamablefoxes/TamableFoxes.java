@@ -110,9 +110,7 @@ public final class TamableFoxes extends JavaPlugin implements Listener {
             Bukkit.getServer().getConsoleSender().sendMessage(Config.getPrefix() + ChatColor.YELLOW + LanguageConfig.getMCVersionLoading(Bukkit.getMinecraftVersion()));
             nmsInterface.registerCustomFoxEntity();
 
-            if (Config.getMaxPlayerFoxTames() != 0) {
-                SQLiteHelper.getInstance(this).createTablesIfNotExist();
-            }
+            SQLiteHelper.getInstance(this).createTablesIfNotExist();
         }
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
     }
@@ -132,6 +130,7 @@ public final class TamableFoxes extends JavaPlugin implements Listener {
         this.getCommand("spawntamablefox").setExecutor(new CommandSpawnTamableFox(this));
         this.getCommand("tamablefoxes").setExecutor(new CommandTamableFoxes(this));
         this.getCommand("givefox").setExecutor(new CommandGiveFox(this, playerInteractEntityEventListener));
+        this.getCommand("fox").setExecutor(new CommandFox());
 
         this.saveDefaultConfig();
         getConfig().options().copyDefaults(true);

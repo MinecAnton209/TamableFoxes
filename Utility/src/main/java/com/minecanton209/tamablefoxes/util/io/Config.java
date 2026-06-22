@@ -47,4 +47,35 @@ public class Config {
     public static String getPrefix() {
         return ChatColor.translateAlternateColorCodes('&', config.contains("prefix") ? config.getString("prefix") : "&c[Tamable Foxes] ");
     }
+
+    // Taming food
+    public static List<String> getTamingFoodItems() {
+        return config.contains("taming-food.items") ? config.getStringList("taming-food.items") : List.of("CHICKEN");
+    }
+
+    public static double getTamingChance() {
+        return config.getDouble("taming-food.chance", 0.3);
+    }
+
+    // Fox stats
+    public static double getWildMaxHealth() {
+        return config.getDouble("fox-stats.wild.max-health", 10.0);
+    }
+
+    public static double getTamedMaxHealth() {
+        return config.getDouble("fox-stats.tamed.max-health", 20.0);
+    }
+
+    public static double getTamedAttackDamage() {
+        return config.getDouble("fox-stats.tamed.attack-damage", 4.0);
+    }
+
+    // Taming effects
+    public static boolean doesTamingShowHearts() {
+        return config.getBoolean("taming-effects.hearts", true);
+    }
+
+    public static String getTamingSound() {
+        return config.getString("taming-effects.sound", "ENTITY_PLAYER_LEVELUP");
+    }
 }
