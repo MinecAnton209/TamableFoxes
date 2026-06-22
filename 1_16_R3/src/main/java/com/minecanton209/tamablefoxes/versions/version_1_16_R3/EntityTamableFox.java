@@ -392,6 +392,12 @@ public class EntityTamableFox extends EntityFox implements ITamableFoxAdapter {
     }
 
     @Override
+    public org.bukkit.inventory.ItemStack toBukkitItemStack(Object itemstack) {
+        if (itemstack instanceof ItemStack stack) return CraftItemStack.asBukkitCopy(stack);
+        return null;
+    }
+
+    @Override
     public void setDeltaMovement(double x, double y, double z) {
         this.setMot(x, y, z);
     }

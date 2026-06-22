@@ -69,6 +69,9 @@ public interface ITamableFoxAdapter {
     void setItemSlotMainHandAir();
     void dropItemFromMouth();
 
+    // Convert NMS ItemStack to Bukkit ItemStack for cross-version checks
+    default org.bukkit.inventory.ItemStack toBukkitItemStack(Object itemstack) { return null; }
+
     // === Goals (version-specific) ===
     void setOrderedToSit(boolean sit);
     boolean isOrderedToSit();

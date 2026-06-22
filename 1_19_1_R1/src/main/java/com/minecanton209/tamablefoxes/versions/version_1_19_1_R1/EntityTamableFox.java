@@ -578,6 +578,12 @@ public class EntityTamableFox extends Fox {
         super.die(damageSource);
     }
 
+    @Override
+    public org.bukkit.inventory.ItemStack toBukkitItemStack(Object itemstack) {
+        if (itemstack instanceof ItemStack stack) return CraftItemStack.asBukkitCopy(stack);
+        return null;
+    }
+
 
     private Goal getFoxInnerPathfinderGoal(String innerName, List<Object> args, List<Class<?>> argTypes) {
         return (Goal) Utils.instantiatePrivateInnerClass(Fox.class, innerName, this, args, argTypes);

@@ -41,6 +41,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <minimizeJar>true</minimizeJar>
                             <outputFile>target/TamableFoxes-v${project.parent.version}.jar</outputFile>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>

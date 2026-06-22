@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import com.minecanton209.tamablefoxes.util.io.Config;
 import com.minecanton209.tamablefoxes.util.io.LanguageConfig;
+import com.cryptomorin.xseries.XMaterial;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import java.util.Arrays;
@@ -66,7 +67,7 @@ public final class TamableFoxLogic {
 
             if (!fox.isCrouching()) {
                 // Not sneaking: toggle sit or show nametag
-                if (isNameTag(itemstack)) {
+                if (isNameTag(fox, itemstack)) {
                     openRenameGui(fox);
                     return "PASS";
                 }
@@ -78,7 +79,7 @@ public final class TamableFoxLogic {
                 return "SUCCESS";
             } else {
                 // Sneaking: item management
-                if (isBucket(itemstack)) {
+                if (isBucket(fox, itemstack)) {
                     return "PASS";
                 }
 
@@ -217,18 +218,22 @@ public final class TamableFoxLogic {
         }
     }
 
-    // === NMS-agnostic checks (using adapter) ===
+    // === NMS-agnostic checks (using XMaterial) ===
 
     private static boolean isMainHand(Object hand) {
         return hand != null && hand.toString().contains("MAIN_HAND");
     }
 
-    private static boolean isNameTag(Object itemstack) {
-        return itemstack != null && itemstack.toString().contains("NameTag");
+    private static boolean isNameTag(ITamableFoxAdapter fox, Object itemstack) {
+        org.bukkit.inventory.ItemStack bukkit = fox.toBukkitItemStack(itemstack);
+        return bukkit != null && XMaterial.matchXMaterial(bukkit.getType()) == XMaterial.NAME_TAG;
     }
 
-    private static boolean isBucket(Object itemstack) {
-        return itemstack != null && itemstack.toString().contains("Bucket");
+    private static boolean isBucket(ITamableFoxAdapter fox, Object itemstack) {
+        org.bukkit.inventory.ItemStack bukkit = fox.toBukkitItemStack(itemstack);
+        if (bukkit == null) return false;
+        XMaterial mat = XMaterial.matchXMaterial(bukkit.getType());
+        return mat.name().endsWith("_BUCKET") || mat == XMaterial.BUCKET;
     }
 
     private static void setItemCount(Object itemstack, int count) {
