@@ -487,4 +487,23 @@ public class EntityTamableFox extends EntityFox implements ITamableFoxAdapter {
     public boolean isSpectator() {
         return interactingPlayer != null && interactingPlayer.getGameMode() == GameMode.SPECTATOR;
     }
+
+    @Override
+    public void setTarget(EntityLiving target) {
+        if (target != null && !this.a(target, (EntityLiving) this.getOwner())) {
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    @Override
+    public void clearTarget() {
+        try {
+            java.lang.reflect.Method m = EntityInsentient.class.getDeclaredMethod("setTarget", EntityLiving.class, org.bukkit.event.entity.EntityTargetEvent.TargetReason.class);
+            m.setAccessible(true);
+            m.invoke(this, (EntityLiving) null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET);
+        } catch (Exception e) {
+            super.setTarget(null);
+        }
+    }
 }
