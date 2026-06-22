@@ -285,10 +285,8 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
     // Remove untamed goals if its tamed.
     private void reassessTameGoals() {
         if (!isTamed()) return;
-        // Wake fox and clear sleep/sit state before removing untamed goals
-        // (removeGoal does not call stop(), so setSleeping(false) would never fire)
-        this.goalSleepWhenOrdered.setOrderedToSleep(false);
-        this.goalSitWhenOrdered.setOrderedToSit(false);
+        setOrderedToSleep(false);
+        setOrderedToSit(false);
 
         for (Goal untamedGoal : untamedGoals) {
             this.goalSelector.removeGoal(untamedGoal);
