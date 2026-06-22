@@ -115,168 +115,135 @@ public class CommandFox implements TabExecutor {
                 "")
             .build());
 
-        // === Row 2: Teleport fox → player / Follow ===
+        // === Row 2: Teleport / Follow ===
 
         // Teleport fox → player
         long tpCd = getCooldownRemaining(player, "teleport", COOLDOWN_TELEPORT);
-        if (tpCd > 0) {
-            gui.item(11, new ItemBuilder(XMaterial.ENDER_PEARL)
-                .name("&7Teleport Fox to You").lore("&cCooldown: " + fmtCd(tpCd)).build());
-        } else {
-            gui.item(11, new ItemBuilder(XMaterial.ENDER_PEARL)
-                .name("&bTeleport Fox to You").lore("&7Bring your fox to you").build());
-            gui.onClick(11, (e, g) -> {
-                e.setCancelled(true);
-                Player p = (Player) e.getWhoClicked();
-                if (isOnCooldown(p, "teleport", COOLDOWN_TELEPORT)) {
-                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Wait " + fmtCd(getCooldownRemaining(p, "teleport", COOLDOWN_TELEPORT)));
-                    return;
-                }
-                ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-                if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-                t.getBukkitEntity().teleport(p);
-                setCooldown(p, "teleport");
-                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported to you!");
-                p.closeInventory();
-            });
-        }
+        gui.item(11, tpCd > 0
+            ? new ItemBuilder(XMaterial.ENDER_PEARL).name("&7Teleport Fox to You").lore("&cCooldown: " + fmtCd(tpCd)).build()
+            : new ItemBuilder(XMaterial.ENDER_PEARL).name("&bTeleport Fox to You").lore("&7Bring your fox to you").build());
+        gui.onClick(11, (e, g) -> {
+            e.setCancelled(true);
+            Player p = (Player) e.getWhoClicked();
+            if (isOnCooldown(p, "teleport", COOLDOWN_TELEPORT)) { refresh(p); return; }
+            ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+            if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+            t.getBukkitEntity().teleport(p);
+            setCooldown(p, "teleport");
+            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported to you!");
+            refresh(p);
+        });
 
-        // Follow / Wander toggle (slot 13 — center of row 2)
+        // Follow / Wander
         UUID foxUUID = bukkitFox != null ? bukkitFox.getUniqueId() : null;
         boolean following = foxUUID != null && SQLiteHelper.getInstance(plugin()).getFoxFollowing(foxUUID);
-        XMaterial followMat = following ? XMaterial.LEAD : XMaterial.FEATHER;
-        String followState = following ? "&aFollowing" : "&eWandering";
-        gui.item(13, new ItemBuilder(followMat)
+        gui.item(13, new ItemBuilder(following ? XMaterial.LEAD : XMaterial.FEATHER)
             .name("&6Follow Mode")
-            .lore("", "&7State: " + followState, "&7Click to toggle", "")
+            .lore("", "&7State: " + (following ? "&aFollowing" : "&eWandering"), "&7Click to toggle", "")
             .build());
         gui.onClick(13, (e, g) -> {
             e.setCancelled(true);
             Player p = (Player) e.getWhoClicked();
             if (foxUUID == null) return;
-            boolean newFollow = !SQLiteHelper.getInstance(plugin()).getFoxFollowing(foxUUID);
-            SQLiteHelper.getInstance(plugin()).setFoxFollowing(foxUUID, newFollow);
-            String s = newFollow ? ChatColor.GREEN + "Following" : ChatColor.YELLOW + "Wandering";
-            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + s);
-            p.closeInventory();
+            boolean nf = !SQLiteHelper.getInstance(plugin()).getFoxFollowing(foxUUID);
+            SQLiteHelper.getInstance(plugin()).setFoxFollowing(foxUUID, nf);
+            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + (nf ? ChatColor.GREEN + "Following" : ChatColor.YELLOW + "Wandering"));
+            refresh(p);
         });
 
-        // === Row 3: Sit / Sleep / Rename ===
+        // === Row 3: Sit / Rename / Sleep ===
 
         // Sit
         long sitCd = getCooldownRemaining(player, "sit", COOLDOWN_STATE);
-        if (sitCd > 0) {
-            gui.item(20, new ItemBuilder(XMaterial.OAK_FENCE_GATE)
-                .name("&7Toggle Sit").lore("&cCooldown: " + fmtCd(sitCd)).build());
-        } else {
-            gui.item(20, new ItemBuilder(XMaterial.OAK_FENCE_GATE)
-                .name("&eToggle Sit").lore("&7Make your fox sit or stand").build());
-            gui.onClick(20, (e, g) -> {
-                e.setCancelled(true);
-                Player p = (Player) e.getWhoClicked();
-                if (isOnCooldown(p, "sit", COOLDOWN_STATE)) {
-                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Wait " + fmtCd(getCooldownRemaining(p, "sit", COOLDOWN_STATE)));
-                    return;
-                }
-                ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-                if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-                t.setOrderedToSleep(false);
-                t.setOrderedToSit(!t.isOrderedToSit());
-                t.setDeltaMovement(0, 0, 0);
-                setCooldown(p, "sit");
-                String s = t.isOrderedToSit() ? ChatColor.GREEN + "sitting" : ChatColor.YELLOW + "standing";
-                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
-                updateFoxDb(t);
-                p.closeInventory();
-            });
-        }
+        gui.item(20, sitCd > 0
+            ? new ItemBuilder(XMaterial.OAK_FENCE_GATE).name("&7Toggle Sit").lore("&cCooldown: " + fmtCd(sitCd)).build()
+            : new ItemBuilder(XMaterial.OAK_FENCE_GATE).name("&eToggle Sit").lore("&7Make your fox sit or stand").build());
+        gui.onClick(20, (e, g) -> {
+            e.setCancelled(true);
+            Player p = (Player) e.getWhoClicked();
+            if (isOnCooldown(p, "sit", COOLDOWN_STATE)) { refresh(p); return; }
+            ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+            if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+            t.setOrderedToSleep(false);
+            t.setOrderedToSit(!t.isOrderedToSit());
+            t.setDeltaMovement(0, 0, 0);
+            setCooldown(p, "sit");
+            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + (t.isOrderedToSit() ? ChatColor.GREEN + "sitting" : ChatColor.YELLOW + "standing"));
+            updateFoxDb(t);
+            refresh(p);
+        });
 
         // Rename
         long rnCd = getCooldownRemaining(player, "rename", COOLDOWN_RENAME);
-        if (rnCd > 0) {
-            gui.item(22, new ItemBuilder(XMaterial.NAME_TAG)
-                .name("&7Rename Fox").lore("&cCooldown: " + fmtCd(rnCd)).build());
-        } else {
-            gui.item(22, new ItemBuilder(XMaterial.NAME_TAG)
-                .name("&dRename Fox").lore("&7Give your fox a name").build());
-            gui.onClick(22, (e, g) -> {
-                e.setCancelled(true);
-                Player p = (Player) e.getWhoClicked();
-                if (isOnCooldown(p, "rename", COOLDOWN_RENAME)) {
-                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Wait " + fmtCd(getCooldownRemaining(p, "rename", COOLDOWN_RENAME)));
-                    return;
-                }
-                ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-                if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-                setCooldown(p, "rename");
-                p.closeInventory();
-                TamableFoxLogic.openRenameGui(t);
-            });
-        }
+        gui.item(22, rnCd > 0
+            ? new ItemBuilder(XMaterial.NAME_TAG).name("&7Rename Fox").lore("&cCooldown: " + fmtCd(rnCd)).build()
+            : new ItemBuilder(XMaterial.NAME_TAG).name("&dRename Fox").lore("&7Give your fox a name").build());
+        gui.onClick(22, (e, g) -> {
+            e.setCancelled(true);
+            Player p = (Player) e.getWhoClicked();
+            if (isOnCooldown(p, "rename", COOLDOWN_RENAME)) { refresh(p); return; }
+            ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+            if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+            setCooldown(p, "rename");
+            p.closeInventory();
+            TamableFoxLogic.openRenameGui(t);
+        });
 
         // Sleep
         long slCd = getCooldownRemaining(player, "sleep", COOLDOWN_STATE);
-        if (slCd > 0) {
-            gui.item(24, new ItemBuilder(XMaterial.RED_BED)
-                .name("&7Toggle Sleep").lore("&cCooldown: " + fmtCd(slCd)).build());
-        } else {
-            gui.item(24, new ItemBuilder(XMaterial.RED_BED)
-                .name("&dToggle Sleep").lore("&7Make your fox sleep or wake up").build());
-            gui.onClick(24, (e, g) -> {
-                e.setCancelled(true);
-                Player p = (Player) e.getWhoClicked();
-                if (isOnCooldown(p, "sleep", COOLDOWN_STATE)) {
-                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Wait " + fmtCd(getCooldownRemaining(p, "sleep", COOLDOWN_STATE)));
-                    return;
-                }
-                ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-                if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-                t.setOrderedToSit(false);
-                t.setOrderedToSleep(!t.isOrderedToSleep());
-                t.setDeltaMovement(0, 0, 0);
-                setCooldown(p, "sleep");
-                String s = t.isOrderedToSleep() ? ChatColor.LIGHT_PURPLE + "sleeping" : ChatColor.YELLOW + "awake";
-                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
-                updateFoxDb(t);
-                p.closeInventory();
-            });
-        }
+        gui.item(24, slCd > 0
+            ? new ItemBuilder(XMaterial.RED_BED).name("&7Toggle Sleep").lore("&cCooldown: " + fmtCd(slCd)).build()
+            : new ItemBuilder(XMaterial.RED_BED).name("&dToggle Sleep").lore("&7Make your fox sleep or wake up").build());
+        gui.onClick(24, (e, g) -> {
+            e.setCancelled(true);
+            Player p = (Player) e.getWhoClicked();
+            if (isOnCooldown(p, "sleep", COOLDOWN_STATE)) { refresh(p); return; }
+            ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+            if (t == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+            t.setOrderedToSit(false);
+            t.setOrderedToSleep(!t.isOrderedToSleep());
+            t.setDeltaMovement(0, 0, 0);
+            setCooldown(p, "sleep");
+            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + (t.isOrderedToSleep() ? ChatColor.LIGHT_PURPLE + "sleeping" : ChatColor.YELLOW + "awake"));
+            updateFoxDb(t);
+            refresh(p);
+        });
 
-        // === Row 4: Health bar / Aggressive / Status ===
+        // === Row 4: Health / Combat / Status ===
 
-        // Health bar
         String bar = buildProgressBar(health, maxHp, 20);
         gui.item(31, new ItemBuilder(XMaterial.RED_DYE)
             .name("&cHealth: " + hc + health + "&7/&c" + maxHp)
             .lore("", bar, "")
             .build());
 
-        // Aggressive toggle
+        // Aggressive
         boolean aggressive = foxUUID != null && SQLiteHelper.getInstance(plugin()).getFoxAggressive(foxUUID);
-        XMaterial aggMat = aggressive ? XMaterial.IRON_SWORD : XMaterial.SHIELD;
-        String aggState = aggressive ? "&cAggressive" : "&aPassive";
-        gui.item(32, new ItemBuilder(aggMat)
+        gui.item(32, new ItemBuilder(aggressive ? XMaterial.IRON_SWORD : XMaterial.SHIELD)
             .name("&6Combat Mode")
-            .lore("", "&7State: " + aggState, "&7Attack hostile mobs near you", "")
+            .lore("", "&7State: " + (aggressive ? "&cAggressive" : "&aPassive"), "&7Attack hostile mobs near you", "")
             .build());
         gui.onClick(32, (e, g) -> {
             e.setCancelled(true);
             Player p = (Player) e.getWhoClicked();
             if (foxUUID == null) return;
-            boolean newAgg = !SQLiteHelper.getInstance(plugin()).getFoxAggressive(foxUUID);
-            SQLiteHelper.getInstance(plugin()).setFoxAggressive(foxUUID, newAgg);
-            String s = newAgg ? ChatColor.RED + "Aggressive" : ChatColor.GREEN + "Passive";
-            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + s);
-            p.closeInventory();
+            boolean na = !SQLiteHelper.getInstance(plugin()).getFoxAggressive(foxUUID);
+            SQLiteHelper.getInstance(plugin()).setFoxAggressive(foxUUID, na);
+            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + (na ? ChatColor.RED + "Aggressive" : ChatColor.GREEN + "Passive"));
+            refresh(p);
         });
 
-        // State indicator
+        // State
         XMaterial stateMat = fox.isOrderedToSleep() ? XMaterial.RED_BED : fox.isOrderedToSit() ? XMaterial.OAK_FENCE_GATE : XMaterial.FEATHER;
         String stateColor = fox.isOrderedToSleep() ? "&d" : fox.isOrderedToSit() ? "&e" : "&a";
-        gui.item(33, new ItemBuilder(stateMat)
-            .name("&6State: " + stateColor + state).build());
+        gui.item(33, new ItemBuilder(stateMat).name("&6State: " + stateColor + state).build());
 
         gui.sound(true).open(player);
+    }
+
+    private void refresh(Player player) {
+        ITamableFoxAdapter fox = TamableFoxUtil.findNearestOwnedFox(player, RANGE);
+        if (fox != null) openFoxActionMenu(player, fox);
     }
 
     // === Fox list (from SQLite) ===
