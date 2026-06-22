@@ -63,6 +63,12 @@
                                         <exclude>META-INF/*.RSA</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>net.wesjd:anvilgui</artifact>
+                                    <includes>
+                                        <include>net/wesjd/anvilgui/**</include>
+                                    </includes>
+                                </filter>
                             </filters>
                         </configuration>
                     </execution>
