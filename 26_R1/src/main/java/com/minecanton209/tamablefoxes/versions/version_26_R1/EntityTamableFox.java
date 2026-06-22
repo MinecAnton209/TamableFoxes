@@ -240,6 +240,25 @@ public class EntityTamableFox extends Fox implements ITamableFoxAdapter {
     }
 
     @Override
+    public void clearTarget() {
+        try {
+            java.lang.reflect.Method m = net.minecraft.world.entity.Mob.class.getDeclaredMethod("setTarget", LivingEntity.class, org.bukkit.event.entity.EntityTargetEvent.TargetReason.class);
+            m.setAccessible(true);
+            m.invoke(this, (LivingEntity) null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET);
+        } catch (Exception e) {
+            super.setTarget(null);
+        }
+    }
+
+    @Override
+    public void setTarget(LivingEntity target) {
+        if (target != null && !wantsToAttack(target, this.getOwner())) {
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    @Override
     public void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
         UUID uuid = this.getOwnerUUID();

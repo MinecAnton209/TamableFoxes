@@ -1,10 +1,11 @@
 package com.minecanton209.tamablefoxes.util;
 
-import java.util.UUID;
+import java.util.*;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import com.minecanton209.tamablefoxes.util.io.Config;
 import com.minecanton209.tamablefoxes.util.io.LanguageConfig;
 import com.minecanton209.tamablefoxes.util.io.sqlite.SQLiteHelper;
@@ -12,7 +13,6 @@ import com.cryptomorin.xseries.XMaterial;
 import com.cryptomorin.xseries.XSound;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
-import java.util.Arrays;
 
 /**
  * Shared logic for all version-specific EntityTamableFox implementations.
@@ -218,6 +218,8 @@ public final class TamableFoxLogic {
                 fox.isOrderedToSleep()
             );
             if (Config.isDebug()) Utils.tamableFoxesPlugin.getLogger().info("[FoxDB] Fox registered successfully");
+            aggressiveFoxes.add(bukkit.getUniqueId());
+            knownFoxes.add(bukkit.getUniqueId());
         } catch (Exception e) {
             Utils.tamableFoxesPlugin.getLogger().severe("[FoxDB] Failed to register fox: " + e.getMessage());
             if (Config.isDebug()) e.printStackTrace();
@@ -342,5 +344,111 @@ public final class TamableFoxLogic {
             java.lang.reflect.Method setCount = itemstack.getClass().getMethod("setCount", int.class);
             setCount.invoke(itemstack, count);
         } catch (Exception ignored) {}
+    }
+
+    // === Follow behavior (rubber band) ===
+
+    private static BukkitRunnable followTask;
+    private static final Set<UUID> followingFoxes = Collections.synchronizedSet(new HashSet<>());
+    private static final Set<UUID> aggressiveFoxes = Collections.synchronizedSet(new HashSet<>());
+    private static final Set<UUID> knownFoxes = Collections.synchronizedSet(new HashSet<>());
+    private static final double FOLLOW_RANGE = 10.0;
+    private static final double FOLLOW_TP_RANGE = 16.0;
+
+    public static void markKnown(UUID foxUUID) {
+        knownFoxes.add(foxUUID);
+    }
+
+    public static boolean isRegisteredFox(UUID foxUUID) {
+        return knownFoxes.contains(foxUUID);
+    }
+
+    public static void setFollowing(UUID foxUUID, boolean following) {
+        if (following) followingFoxes.add(foxUUID);
+        else followingFoxes.remove(foxUUID);
+    }
+
+    public static boolean isFollowing(UUID foxUUID) {
+        return followingFoxes.contains(foxUUID);
+    }
+
+    public static void setAggressive(UUID foxUUID, boolean aggressive) {
+        if (aggressive) aggressiveFoxes.add(foxUUID);
+        else aggressiveFoxes.remove(foxUUID);
+    }
+
+    public static boolean isAggressive(UUID foxUUID) {
+        return aggressiveFoxes.contains(foxUUID);
+    }
+
+    public static void startFollowTask() {
+        // Load existing fox states from DB
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            for (org.bukkit.entity.Entity entity : world.getEntities()) {
+                ITamableFoxAdapter adapter = TamableFoxUtil.toAdapter(entity);
+                if (adapter != null && adapter.getOwnerUUID() != null) {
+                    UUID foxUUID = entity.getUniqueId();
+                    SQLiteHelper db = SQLiteHelper.getInstance(Utils.tamableFoxesPlugin);
+                    knownFoxes.add(foxUUID);
+                    if (db.isFoxRegistered(foxUUID)) {
+                        if (db.getFoxFollowing(foxUUID)) followingFoxes.add(foxUUID);
+                        if (db.getFoxAggressive(foxUUID)) aggressiveFoxes.add(foxUUID);
+                    } else {
+                        aggressiveFoxes.add(foxUUID);
+                    }
+                }
+            }
+        }
+
+        if (followTask != null) return;
+        followTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (followingFoxes.isEmpty()) return;
+                for (UUID foxUUID : new HashSet<>(followingFoxes)) {
+                    ITamableFoxAdapter fox = null;
+                    for (org.bukkit.World world : Bukkit.getWorlds()) {
+                        fox = TamableFoxUtil.findFoxByUUID(world, foxUUID);
+                        if (fox != null) break;
+                    }
+                    if (fox == null) continue;
+
+                    UUID ownerUUID = fox.getOwnerUUID();
+                    if (ownerUUID == null) {
+                        followingFoxes.remove(foxUUID);
+                        continue;
+                    }
+                    Player owner = Bukkit.getPlayer(ownerUUID);
+                    if (owner == null || !owner.isOnline()) continue;
+
+                    org.bukkit.entity.Entity bukkitFox = fox.getBukkitEntity();
+                    if (bukkitFox == null) continue;
+
+                    double dist = bukkitFox.getLocation().distance(owner.getLocation());
+                    if (dist > FOLLOW_TP_RANGE) {
+                        bukkitFox.teleport(owner.getLocation().add(
+                            (Math.random() - 0.5) * 3,
+                            0,
+                            (Math.random() - 0.5) * 3
+                        ));
+                    } else if (dist > FOLLOW_RANGE) {
+                        bukkitFox.teleport(owner.getLocation().add(
+                            (Math.random() - 0.5) * 2,
+                            0,
+                            (Math.random() - 0.5) * 2
+                        ));
+                    }
+                    break;
+                }
+            }
+        };
+        followTask.runTaskTimer(Utils.tamableFoxesPlugin, 20L, 20L);
+    }
+
+    public static void stopFollowTask() {
+        if (followTask != null) {
+            followTask.cancel();
+            followTask = null;
+        }
     }
 }

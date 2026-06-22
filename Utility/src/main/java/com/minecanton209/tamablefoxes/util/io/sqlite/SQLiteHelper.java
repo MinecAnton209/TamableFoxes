@@ -341,9 +341,10 @@ public class SQLiteHelper {
         try {
             sqLiteHandler.connect(plugin);
             PreparedStatement stmt = sqLiteHandler.getConnection()
-                .prepareStatement("UPDATE " + foxesTableName + " SET FOLLOWING=? WHERE FOX_UUID=?");
-            stmt.setBoolean(1, following);
-            stmt.setString(2, foxUUID.toString());
+                .prepareStatement("INSERT INTO " + foxesTableName + " (FOX_UUID, OWNER_UUID, FOLLOWING) VALUES (?, '', ?) ON CONFLICT(FOX_UUID) DO UPDATE SET FOLLOWING=?");
+            stmt.setString(1, foxUUID.toString());
+            stmt.setBoolean(2, following);
+            stmt.setBoolean(3, following);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -374,9 +375,10 @@ public class SQLiteHelper {
         try {
             sqLiteHandler.connect(plugin);
             PreparedStatement stmt = sqLiteHandler.getConnection()
-                .prepareStatement("UPDATE " + foxesTableName + " SET AGGRESSIVE=? WHERE FOX_UUID=?");
-            stmt.setBoolean(1, aggressive);
-            stmt.setString(2, foxUUID.toString());
+                .prepareStatement("INSERT INTO " + foxesTableName + " (FOX_UUID, OWNER_UUID, AGGRESSIVE) VALUES (?, '', ?) ON CONFLICT(FOX_UUID) DO UPDATE SET AGGRESSIVE=?");
+            stmt.setString(1, foxUUID.toString());
+            stmt.setBoolean(2, aggressive);
+            stmt.setBoolean(3, aggressive);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

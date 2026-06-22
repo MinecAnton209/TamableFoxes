@@ -30,6 +30,9 @@ public class FoxPathfinderGoalHurtByTarget extends TargetGoal {
     }
 
     public boolean canUse() {
+        if (this.mob instanceof com.minecanton209.tamablefoxes.util.ITamableFoxAdapter adapter) {
+            if (!adapter.wantsToAttack(this.mob.getLastHurtByMob(), this.mob)) return false;
+        }
         int i = this.mob.getLastHurtByMobTimestamp();
         LivingEntity entityliving = this.mob.getLastHurtByMob();
         if (i != this.timestamp && entityliving != null) {

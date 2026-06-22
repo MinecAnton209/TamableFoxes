@@ -28,6 +28,7 @@ public class CommandFox implements TabExecutor {
     private static final long COOLDOWN_RENAME   = 3_600_000;
 
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
+    private final Set<UUID> clickGuard = new HashSet<>();
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -136,7 +137,7 @@ public class CommandFox implements TabExecutor {
 
         // Follow / Wander
         UUID foxUUID = bukkitFox != null ? bukkitFox.getUniqueId() : null;
-        boolean following = foxUUID != null && SQLiteHelper.getInstance(plugin()).getFoxFollowing(foxUUID);
+        boolean following = foxUUID != null && TamableFoxLogic.isFollowing(foxUUID);
         gui.item(13, new ItemBuilder(following ? XMaterial.LEAD : XMaterial.FEATHER)
             .name("&6Follow Mode")
             .lore("", "&7State: " + (following ? "&aFollowing" : "&eWandering"), "&7Click to toggle", "")
@@ -145,7 +146,9 @@ public class CommandFox implements TabExecutor {
             e.setCancelled(true);
             Player p = (Player) e.getWhoClicked();
             if (foxUUID == null) return;
-            boolean nf = !SQLiteHelper.getInstance(plugin()).getFoxFollowing(foxUUID);
+            TamableFoxLogic.markKnown(foxUUID);
+            boolean nf = !TamableFoxLogic.isFollowing(foxUUID);
+            TamableFoxLogic.setFollowing(foxUUID, nf);
             SQLiteHelper.getInstance(plugin()).setFoxFollowing(foxUUID, nf);
             p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + (nf ? ChatColor.GREEN + "Following" : ChatColor.YELLOW + "Wandering"));
             refresh(p);
@@ -218,7 +221,7 @@ public class CommandFox implements TabExecutor {
             .build());
 
         // Aggressive
-        boolean aggressive = foxUUID != null && SQLiteHelper.getInstance(plugin()).getFoxAggressive(foxUUID);
+        boolean aggressive = foxUUID != null && TamableFoxLogic.isAggressive(foxUUID);
         gui.item(32, new ItemBuilder(aggressive ? XMaterial.IRON_SWORD : XMaterial.SHIELD)
             .name("&6Combat Mode")
             .lore("", "&7State: " + (aggressive ? "&cAggressive" : "&aPassive"), "&7Attack hostile mobs near you", "")
@@ -227,8 +230,14 @@ public class CommandFox implements TabExecutor {
             e.setCancelled(true);
             Player p = (Player) e.getWhoClicked();
             if (foxUUID == null) return;
-            boolean na = !SQLiteHelper.getInstance(plugin()).getFoxAggressive(foxUUID);
+            TamableFoxLogic.markKnown(foxUUID);
+            boolean na = !TamableFoxLogic.isAggressive(foxUUID);
+            TamableFoxLogic.setAggressive(foxUUID, na);
             SQLiteHelper.getInstance(plugin()).setFoxAggressive(foxUUID, na);
+            if (!na) {
+                ITamableFoxAdapter t = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+                if (t != null) t.clearTarget();
+            }
             p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox mode: " + (na ? ChatColor.RED + "Aggressive" : ChatColor.GREEN + "Passive"));
             refresh(p);
         });
@@ -242,8 +251,17 @@ public class CommandFox implements TabExecutor {
     }
 
     private void refresh(Player player) {
-        ITamableFoxAdapter fox = TamableFoxUtil.findNearestOwnedFox(player, RANGE);
-        if (fox != null) openFoxActionMenu(player, fox);
+        UUID pid = player.getUniqueId();
+        if (clickGuard.contains(pid)) return;
+        clickGuard.add(pid);
+        org.bukkit.Bukkit.getScheduler().runTask(plugin(), () -> {
+            try {
+                ITamableFoxAdapter fox = TamableFoxUtil.findNearestOwnedFox(player, RANGE);
+                if (fox != null) openFoxActionMenu(player, fox);
+            } finally {
+                clickGuard.remove(pid);
+            }
+        });
     }
 
     // === Fox list (from SQLite) ===

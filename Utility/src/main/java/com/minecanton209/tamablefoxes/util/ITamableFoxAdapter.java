@@ -122,7 +122,24 @@ public interface ITamableFoxAdapter {
     // === Combat ===
     // Default: avoids clash with NMS LivingEntity parameter types
     default boolean isOwnedBy(Object entity) { return false; }
-    default boolean wantsToAttack(Object target, Object owner) { return true; }
+    default boolean wantsToAttack(Object target, Object owner) {
+        try {
+            org.bukkit.entity.Entity self = getBukkitEntity();
+            if (self == null) return true;
+            return TamableFoxLogic.isAggressive(self.getUniqueId());
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    default void clearTarget() {
+        try {
+            org.bukkit.entity.Entity self = getBukkitEntity();
+            if (self instanceof org.bukkit.entity.Mob mob) {
+                mob.setTarget(null);
+            }
+        } catch (Exception ignored) {}
+    }
     boolean isDefending();
     void setDefending(boolean defending);
 

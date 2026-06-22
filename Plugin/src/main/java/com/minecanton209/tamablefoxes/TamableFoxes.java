@@ -3,6 +3,7 @@ package com.minecanton209.tamablefoxes;
 import com.minecanton209.tamablefoxes.util.NMSInterface;
 import com.minecanton209.tamablefoxes.util.Utils;
 import com.minecanton209.tamablefoxes.util.io.Config;
+import com.minecanton209.tamablefoxes.util.TamableFoxLogic;
 import com.minecanton209.tamablefoxes.util.io.sqlite.SQLiteHelper;
 import com.minecanton209.tamablefoxes.versions.version_1_14_R1.NMSInterface_1_14_R1;
 import com.minecanton209.tamablefoxes.versions.version_1_15_R1.NMSInterface_1_15_R1;
@@ -127,6 +128,7 @@ public final class TamableFoxes extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(playerInteractEntityEventListener, this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
+        getServer().getPluginManager().registerEvents(new FoxTargetListener(), this);
         this.getCommand("spawntamablefox").setExecutor(new CommandSpawnTamableFox(this));
         this.getCommand("tamablefoxes").setExecutor(new CommandTamableFoxes(this));
         this.getCommand("givefox").setExecutor(new CommandGiveFox(this, playerInteractEntityEventListener));
@@ -135,6 +137,9 @@ public final class TamableFoxes extends JavaPlugin implements Listener {
         this.saveDefaultConfig();
         getConfig().options().copyDefaults(true);
         saveConfig();
+
+        // Start follow task
+        TamableFoxLogic.startFollowTask();
     }
 
     @Override
