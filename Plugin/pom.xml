@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.minecanton209</groupId>
         <artifactId>tamablefoxes-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
 
     <artifactId>tamablefoxes</artifactId>
@@ -304,7 +304,7 @@
         <dependency>
             <groupId>com.minecanton209</groupId>
             <artifactId>tamablefoxes_v1_21_9_R1</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

@@ -7,7 +7,7 @@
     <parent>
         <artifactId>tamablefoxes-parent</artifactId>
         <groupId>com.minecanton209</groupId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
 
     <artifactId>tamablefoxes_v1_16_R2</artifactId>
