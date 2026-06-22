@@ -30,6 +30,7 @@ import com.minecanton209.tamablefoxes.versions.version_1_21_9_R1.NMSInterface_1_
 import com.minecanton209.tamablefoxes.versions.version_1_21_11_R1.NMSInterface_1_21_11_R1;
 import com.minecanton209.tamablefoxes.versions.version_26_R1.NMSInterface_26_R1;
 import com.minecanton209.tamablefoxes.util.io.LanguageConfig;
+import com.minecanton209.tamablefoxes.util.gui.GuiListener;
 
 
 import org.bstats.bukkit.Metrics;
@@ -127,6 +128,7 @@ public final class TamableFoxes extends JavaPlugin implements Listener {
         playerInteractEntityEventListener = new PlayerInteractEntityEventListener(this);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(playerInteractEntityEventListener, this);
+        getServer().getPluginManager().registerEvents(new GuiListener(), this);
         this.getCommand("spawntamablefox").setExecutor(new CommandSpawnTamableFox(this));
         this.getCommand("tamablefoxes").setExecutor(new CommandTamableFoxes(this));
         this.getCommand("givefox").setExecutor(new CommandGiveFox(this, playerInteractEntityEventListener));
