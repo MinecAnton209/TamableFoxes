@@ -199,9 +199,13 @@ public final class TamableFoxLogic {
     private static void registerFoxInDb(ITamableFoxAdapter fox) {
         try {
             org.bukkit.entity.Entity bukkit = fox.getBukkitEntity();
-            if (bukkit == null) return;
+            if (bukkit == null) {
+                Utils.tamableFoxesPlugin.getLogger().warning("[FoxDB] registerFoxInDb: bukkit entity is null");
+                return;
+            }
             Location loc = bukkit.getLocation();
             String name = bukkit.getCustomName() != null ? ChatColor.stripColor(bukkit.getCustomName()) : "";
+            Utils.tamableFoxesPlugin.getLogger().info("[FoxDB] Registering fox " + bukkit.getUniqueId() + " owner=" + fox.getOwnerUUID());
             SQLiteHelper.getInstance(Utils.tamableFoxesPlugin).registerFox(
                 bukkit.getUniqueId(),
                 fox.getOwnerUUID(),
@@ -213,7 +217,11 @@ public final class TamableFoxLogic {
                 fox.isOrderedToSit(),
                 fox.isOrderedToSleep()
             );
-        } catch (Exception ignored) {}
+            Utils.tamableFoxesPlugin.getLogger().info("[FoxDB] Fox registered successfully");
+        } catch (Exception e) {
+            Utils.tamableFoxesPlugin.getLogger().severe("[FoxDB] Failed to register fox: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // === Taming food check ===

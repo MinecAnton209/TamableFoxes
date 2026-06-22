@@ -23,6 +23,12 @@ import java.util.*;
 public class CommandFox implements TabExecutor {
 
     private static final int RANGE = 32;
+    private static final long COOLDOWN_TELEPORT = 120_000;   // 2 min
+    private static final long COOLDOWN_STATE    = 5_000;     // 5 sec
+    private static final long COOLDOWN_RENAME   = 3_600_000; // 1 hour
+
+    // player UUID -> action -> last used timestamp
+    private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -48,6 +54,41 @@ public class CommandFox implements TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         return Collections.emptyList();
+    }
+
+    // === Cooldowns ===
+
+    private boolean isOnCooldown(Player player, String action, long cooldownMs) {
+        Map<String, Long> playerCooldowns = cooldowns.get(player.getUniqueId());
+        if (playerCooldowns == null) return false;
+        Long lastUsed = playerCooldowns.get(action);
+        if (lastUsed == null) return false;
+        return System.currentTimeMillis() - lastUsed < cooldownMs;
+    }
+
+    private long getCooldownRemaining(Player player, String action, long cooldownMs) {
+        Map<String, Long> playerCooldowns = cooldowns.get(player.getUniqueId());
+        if (playerCooldowns == null) return 0;
+        Long lastUsed = playerCooldowns.get(action);
+        if (lastUsed == null) return 0;
+        long elapsed = System.currentTimeMillis() - lastUsed;
+        return Math.max(0, cooldownMs - elapsed);
+    }
+
+    private void setCooldown(Player player, String action) {
+        cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
+            .put(action, System.currentTimeMillis());
+    }
+
+    private String formatCooldown(long ms) {
+        if (ms <= 0) return null;
+        long sec = ms / 1000;
+        if (sec >= 60) {
+            long min = sec / 60;
+            sec = sec % 60;
+            return min + "m " + sec + "s";
+        }
+        return sec + "s";
     }
 
     // === Fox action menu (when fox is nearby) ===
@@ -82,93 +123,128 @@ public class CommandFox implements TabExecutor {
                 "")
             .build());
 
-        // Teleport
-        gui.item(10, new ItemBuilder(XMaterial.ENDER_PEARL)
-            .name("&bTeleport to Fox")
-            .lore("&7Teleport your fox to you")
-            .build());
-        gui.onClick(10, (event, g) -> {
-            event.setCancelled(true);
-            Player p = (Player) event.getWhoClicked();
-            ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-            if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-            target.getBukkitEntity().teleport(p);
-            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported!");
-            p.closeInventory();
-        });
+        // Teleport (slot 11 — center of row 2)
+        long tpCd = getCooldownRemaining(player, "teleport", COOLDOWN_TELEPORT);
+        if (tpCd > 0) {
+            gui.item(11, new ItemBuilder(XMaterial.ENDER_PEARL)
+                .name("&7Teleport to Fox")
+                .lore("&cCooldown: " + formatCooldown(tpCd))
+                .build());
+        } else {
+            gui.item(11, new ItemBuilder(XMaterial.ENDER_PEARL)
+                .name("&bTeleport to Fox")
+                .lore("&7Teleport your fox to you")
+                .build());
+            gui.onClick(11, (event, g) -> {
+                event.setCancelled(true);
+                Player p = (Player) event.getWhoClicked();
+                if (isOnCooldown(p, "teleport", COOLDOWN_TELEPORT)) {
+                    String rem = formatCooldown(getCooldownRemaining(p, "teleport", COOLDOWN_TELEPORT));
+                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Teleport cooldown: " + rem);
+                    return;
+                }
+                ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+                if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+                target.getBukkitEntity().teleport(p);
+                setCooldown(p, "teleport");
+                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported!");
+                p.closeInventory();
+            });
+        }
 
-        // Sit
-        gui.item(12, new ItemBuilder(XMaterial.OAK_FENCE_GATE)
-            .name("&eToggle Sit")
-            .lore("&7Make your fox sit or stand")
-            .build());
-        gui.onClick(12, (event, g) -> {
-            event.setCancelled(true);
-            Player p = (Player) event.getWhoClicked();
-            ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-            if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-            target.setOrderedToSleep(false);
-            target.setOrderedToSit(!target.isOrderedToSit());
-            target.setDeltaMovement(0, 0, 0);
-            String s = target.isOrderedToSit() ? ChatColor.GREEN + "sitting" : ChatColor.YELLOW + "standing";
-            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
-            updateFoxDb(target);
-            p.closeInventory();
-        });
-
-        // Sleep
-        gui.item(14, new ItemBuilder(XMaterial.RED_BED)
-            .name("&dToggle Sleep")
-            .lore("&7Make your fox sleep or wake up")
-            .build());
-        gui.onClick(14, (event, g) -> {
-            event.setCancelled(true);
-            Player p = (Player) event.getWhoClicked();
-            ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-            if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-            target.setOrderedToSit(false);
-            target.setOrderedToSleep(!target.isOrderedToSleep());
-            target.setDeltaMovement(0, 0, 0);
-            String s = target.isOrderedToSleep() ? ChatColor.LIGHT_PURPLE + "sleeping" : ChatColor.YELLOW + "awake";
-            p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
-            updateFoxDb(target);
-            p.closeInventory();
-        });
-
-        // Heal
-        gui.item(16, new ItemBuilder(XMaterial.GOLDEN_APPLE)
-            .name("&aHeal Fox")
-            .lore("&7Fully heal your fox")
-            .build());
-        gui.onClick(16, (event, g) -> {
-            event.setCancelled(true);
-            Player p = (Player) event.getWhoClicked();
-            ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-            if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-            float missing = target.getMaxHealth() - target.getHealth();
-            if (missing <= 0) {
-                p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Fox is already at full health!");
-            } else {
-                target.heal(missing);
-                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox healed!");
+        // Sit (slot 20 — left center of row 3)
+        long sitCd = getCooldownRemaining(player, "sit", COOLDOWN_STATE);
+        if (sitCd > 0) {
+            gui.item(20, new ItemBuilder(XMaterial.OAK_FENCE_GATE)
+                .name("&7Toggle Sit")
+                .lore("&cCooldown: " + formatCooldown(sitCd))
+                .build());
+        } else {
+            gui.item(20, new ItemBuilder(XMaterial.OAK_FENCE_GATE)
+                .name("&eToggle Sit")
+                .lore("&7Make your fox sit or stand")
+                .build());
+            gui.onClick(20, (event, g) -> {
+                event.setCancelled(true);
+                Player p = (Player) event.getWhoClicked();
+                if (isOnCooldown(p, "sit", COOLDOWN_STATE)) {
+                    String rem = formatCooldown(getCooldownRemaining(p, "sit", COOLDOWN_STATE));
+                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Sit cooldown: " + rem);
+                    return;
+                }
+                ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+                if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+                target.setOrderedToSleep(false);
+                target.setOrderedToSit(!target.isOrderedToSit());
+                target.setDeltaMovement(0, 0, 0);
+                setCooldown(p, "sit");
+                String s = target.isOrderedToSit() ? ChatColor.GREEN + "sitting" : ChatColor.YELLOW + "standing";
+                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
                 updateFoxDb(target);
-            }
-            p.closeInventory();
-        });
+                p.closeInventory();
+            });
+        }
 
-        // Rename
-        gui.item(22, new ItemBuilder(XMaterial.NAME_TAG)
-            .name("&dRename Fox")
-            .lore("&7Give your fox a name")
-            .build());
-        gui.onClick(22, (event, g) -> {
-            event.setCancelled(true);
-            Player p = (Player) event.getWhoClicked();
-            ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
-            if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
-            p.closeInventory();
-            TamableFoxLogic.openRenameGui(target);
-        });
+        // Sleep (slot 24 — right center of row 3)
+        long sleepCd = getCooldownRemaining(player, "sleep", COOLDOWN_STATE);
+        if (sleepCd > 0) {
+            gui.item(24, new ItemBuilder(XMaterial.RED_BED)
+                .name("&7Toggle Sleep")
+                .lore("&cCooldown: " + formatCooldown(sleepCd))
+                .build());
+        } else {
+            gui.item(24, new ItemBuilder(XMaterial.RED_BED)
+                .name("&dToggle Sleep")
+                .lore("&7Make your fox sleep or wake up")
+                .build());
+            gui.onClick(24, (event, g) -> {
+                event.setCancelled(true);
+                Player p = (Player) event.getWhoClicked();
+                if (isOnCooldown(p, "sleep", COOLDOWN_STATE)) {
+                    String rem = formatCooldown(getCooldownRemaining(p, "sleep", COOLDOWN_STATE));
+                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Sleep cooldown: " + rem);
+                    return;
+                }
+                ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+                if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+                target.setOrderedToSit(false);
+                target.setOrderedToSleep(!target.isOrderedToSleep());
+                target.setDeltaMovement(0, 0, 0);
+                setCooldown(p, "sleep");
+                String s = target.isOrderedToSleep() ? ChatColor.LIGHT_PURPLE + "sleeping" : ChatColor.YELLOW + "awake";
+                p.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox is now " + s);
+                updateFoxDb(target);
+                p.closeInventory();
+            });
+        }
+
+        // Rename (slot 22 — center of row 3)
+        long renameCd = getCooldownRemaining(player, "rename", COOLDOWN_RENAME);
+        if (renameCd > 0) {
+            gui.item(22, new ItemBuilder(XMaterial.NAME_TAG)
+                .name("&7Rename Fox")
+                .lore("&cCooldown: " + formatCooldown(renameCd))
+                .build());
+        } else {
+            gui.item(22, new ItemBuilder(XMaterial.NAME_TAG)
+                .name("&dRename Fox")
+                .lore("&7Give your fox a name")
+                .build());
+            gui.onClick(22, (event, g) -> {
+                event.setCancelled(true);
+                Player p = (Player) event.getWhoClicked();
+                if (isOnCooldown(p, "rename", COOLDOWN_RENAME)) {
+                    String rem = formatCooldown(getCooldownRemaining(p, "rename", COOLDOWN_RENAME));
+                    p.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Rename cooldown: " + rem);
+                    return;
+                }
+                ITamableFoxAdapter target = TamableFoxUtil.findNearestOwnedFox(p, RANGE);
+                if (target == null) { p.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox not found!"); return; }
+                setCooldown(p, "rename");
+                p.closeInventory();
+                TamableFoxLogic.openRenameGui(target);
+            });
+        }
 
         // Health bar display
         String bar = buildProgressBar(health, maxHealth, 20);
@@ -237,10 +313,8 @@ public class CommandFox implements TabExecutor {
             int slot = event.getRawSlot();
             if (slot < 0 || slot >= p.getInventory().getSize()) return;
 
-            // Find which fox was clicked based on slot position
-            int slots = 6 * 9 - 2; // minus nav buttons
+            int slots = 6 * 9 - 2;
             int startIdx = paged.getCurrentPage() * slots;
-            // Map raw slot to item index (skip nav slots)
             int contentIndex = 0;
             for (int i = 0; i < slot; i++) {
                 if (i != 45 && i != 53) contentIndex++;
@@ -268,14 +342,12 @@ public class CommandFox implements TabExecutor {
         double y = (double) foxData.get("y");
         double z = (double) foxData.get("z");
 
-        // Try to find the actual fox entity first
         UUID foxUUID = UUID.fromString((String) foxData.get("foxUUID"));
         ITamableFoxAdapter fox = TamableFoxUtil.findFoxByUUID(world, foxUUID);
         if (fox != null) {
             fox.getBukkitEntity().teleport(player);
             player.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported to you!");
         } else {
-            // Fox not loaded — teleport player to fox's last location
             player.teleport(new org.bukkit.Location(world, x, y, z));
             player.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Teleported to fox's last known location.");
         }

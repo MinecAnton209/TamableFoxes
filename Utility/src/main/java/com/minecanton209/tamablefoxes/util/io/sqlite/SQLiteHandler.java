@@ -2,6 +2,7 @@ package com.minecanton209.tamablefoxes.util.io.sqlite;
 
 import org.bukkit.plugin.Plugin;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -26,6 +27,8 @@ public class SQLiteHandler {
 
 	public void connect(String pluginFolder) {
 		try {
+			File dir = new File(pluginFolder);
+			if (!dir.exists()) dir.mkdirs();
 			String url = "jdbc:sqlite:" + pluginFolder + "/userFoxAmount.db";
 			connection = DriverManager.getConnection(url);
 
