@@ -278,6 +278,11 @@ public final class TamableFoxLogic {
                         String foxName = LanguageConfig.getFoxNameFormat(text, player.getDisplayName());
                         fox.setFoxCustomName(foxName);
                         fox.setFoxCustomNameVisible(true);
+                        org.bukkit.entity.Entity bukkit = fox.getBukkitEntity();
+                        if (bukkit != null) {
+                            SQLiteHelper.getInstance(Utils.tamableFoxesPlugin).updateFoxName(
+                                bukkit.getUniqueId(), ChatColor.stripColor(foxName));
+                        }
                         if (!LanguageConfig.getTamingChosenPerfect(text).equalsIgnoreCase("disabled")) {
                             stateSnapshot.getPlayer().sendMessage(
                                 Config.getPrefix() + ChatColor.GREEN + LanguageConfig.getTamingChosenPerfect(text));
@@ -402,9 +407,13 @@ public final class TamableFoxLogic {
 
         if (followTask != null) return;
         followTask = new BukkitRunnable() {
+            private int tick = 0;
             @Override
             public void run() {
                 if (followingFoxes.isEmpty()) return;
+                tick++;
+                boolean updatePos = tick % 100 == 0;
+                SQLiteHelper db = updatePos ? SQLiteHelper.getInstance(Utils.tamableFoxesPlugin) : null;
                 for (UUID foxUUID : new HashSet<>(followingFoxes)) {
                     ITamableFoxAdapter fox = null;
                     for (org.bukkit.World world : Bukkit.getWorlds()) {
@@ -424,6 +433,14 @@ public final class TamableFoxLogic {
                     org.bukkit.entity.Entity bukkitFox = fox.getBukkitEntity();
                     if (bukkitFox == null) continue;
 
+                    if (fox.isOrderedToSleep() || fox.isOrderedToSit()) {
+                        if (updatePos) {
+                            org.bukkit.Location loc = bukkitFox.getLocation();
+                            db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
+                        }
+                        continue;
+                    }
+
                     double dist = bukkitFox.getLocation().distance(owner.getLocation());
                     if (dist > FOLLOW_TP_RANGE) {
                         bukkitFox.teleport(owner.getLocation().add(
@@ -431,12 +448,19 @@ public final class TamableFoxLogic {
                             0,
                             (Math.random() - 0.5) * 3
                         ));
+                        org.bukkit.Location loc = bukkitFox.getLocation();
+                        db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
                     } else if (dist > FOLLOW_RANGE) {
                         bukkitFox.teleport(owner.getLocation().add(
                             (Math.random() - 0.5) * 2,
                             0,
                             (Math.random() - 0.5) * 2
                         ));
+                        org.bukkit.Location loc = bukkitFox.getLocation();
+                        db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
+                    } else if (updatePos) {
+                        org.bukkit.Location loc = bukkitFox.getLocation();
+                        db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
                     }
                     break;
                 }

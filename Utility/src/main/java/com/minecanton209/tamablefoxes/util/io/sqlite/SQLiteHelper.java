@@ -216,6 +216,22 @@ public class SQLiteHelper {
         }
     }
 
+    public void updateFoxName(UUID foxUUID, String name) {
+        sqLiteHandler = SQLiteHandler.getInstance();
+        try {
+            sqLiteHandler.connect(plugin);
+            PreparedStatement stmt = sqLiteHandler.getConnection()
+                .prepareStatement("UPDATE " + foxesTableName + " SET NAME=? WHERE FOX_UUID=?");
+            stmt.setString(1, name);
+            stmt.setString(2, foxUUID.toString());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeQuietly();
+        }
+    }
+
     public void updateFoxLocation(UUID foxUUID, String world, double x, double y, double z) {
         sqLiteHandler = SQLiteHandler.getInstance();
         try {
