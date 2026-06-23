@@ -357,8 +357,8 @@ public final class TamableFoxLogic {
     private static final Set<UUID> followingFoxes = Collections.synchronizedSet(new HashSet<>());
     private static final Set<UUID> aggressiveFoxes = Collections.synchronizedSet(new HashSet<>());
     private static final Set<UUID> knownFoxes = Collections.synchronizedSet(new HashSet<>());
-    private static final double FOLLOW_RANGE = 10.0;
-    private static final double FOLLOW_TP_RANGE = 16.0;
+    private static final double FOLLOW_RANGE_SQ = 10.0 * 10.0;
+    private static final double FOLLOW_TP_RANGE_SQ = 16.0 * 16.0;
 
     public static void markKnown(UUID foxUUID) {
         knownFoxes.add(foxUUID);
@@ -441,8 +441,20 @@ public final class TamableFoxLogic {
                         continue;
                     }
 
-                    double dist = bukkitFox.getLocation().distance(owner.getLocation());
-                    if (dist > FOLLOW_TP_RANGE) {
+                    if (!bukkitFox.getWorld().equals(owner.getWorld())) {
+                        if (!fox.isOrderedToSit()) {
+                            fox.setOrderedToSit(true);
+                            fox.setDeltaMovement(0, 0, 0);
+                        }
+                        if (updatePos) {
+                            org.bukkit.Location loc = bukkitFox.getLocation();
+                            db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
+                        }
+                        continue;
+                    }
+
+                    double dist = bukkitFox.getLocation().distanceSquared(owner.getLocation());
+                    if (dist > FOLLOW_TP_RANGE_SQ) {
                         bukkitFox.teleport(owner.getLocation().add(
                             (Math.random() - 0.5) * 3,
                             0,
@@ -450,7 +462,7 @@ public final class TamableFoxLogic {
                         ));
                         org.bukkit.Location loc = bukkitFox.getLocation();
                         db.updateFoxLocation(foxUUID, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ());
-                    } else if (dist > FOLLOW_RANGE) {
+                    } else if (dist > FOLLOW_RANGE_SQ) {
                         bukkitFox.teleport(owner.getLocation().add(
                             (Math.random() - 0.5) * 2,
                             0,
