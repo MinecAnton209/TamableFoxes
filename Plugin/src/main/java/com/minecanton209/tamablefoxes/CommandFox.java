@@ -329,8 +329,7 @@ public class CommandFox implements TabExecutor {
             fox.getBukkitEntity().teleport(player);
             player.sendMessage(Config.getPrefix() + ChatColor.GREEN + "Fox teleported to you!");
         } else {
-            player.teleport(new org.bukkit.Location(w, (double) fd.get("x"), (double) fd.get("y"), (double) fd.get("z")));
-            player.sendMessage(Config.getPrefix() + ChatColor.YELLOW + "Teleported to fox's last known location.");
+            player.sendMessage(Config.getPrefix() + ChatColor.RED + "Fox is too far away! Bring it closer first.");
         }
     }
 
